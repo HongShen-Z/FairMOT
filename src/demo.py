@@ -22,7 +22,7 @@ def demo(opt):
     mkdir_if_missing(result_root)
 
     logger.info('Starting tracking...')
-    print(opt.load_model + '222222222222')
+    print(opt.load_model + '11111111111111')
     dataloader = datasets.LoadVideo(opt.input_video, opt.img_size)
     result_filename = os.path.join(result_root, 'results.txt')
     frame_rate = dataloader.frame_rate

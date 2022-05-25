@@ -70,6 +70,7 @@ def write_results_score(filename, results, data_type):
 def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_image=True, frame_rate=30, use_cuda=True):
     if save_dir:
         mkdir_if_missing(save_dir)
+    print(opt.load_model + '22222222222222')
     tracker = JDETracker(opt, frame_rate=frame_rate)
     timer = Timer()
     results = []
