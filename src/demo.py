@@ -41,4 +41,13 @@ def demo(opt):
 if __name__ == '__main__':
     opt = opts().init()
     os.environ['CUDA_VISIBLE_DEVICES'] = str(opt.gpus[0])  # '0'
+    import torch
+    from torch.utils.cpp_extension import CUDA_HOME
+
+    cuda_available = torch.cuda.is_available()
+
+    is_installation_ok = cuda_available and CUDA_HOME is not None
+
+    print('Is CUDA OK: {0}\nIs cuda available: {1}\nCuda home: {2}'.format(
+        is_installation_ok, cuda_available, CUDA_HOME))
     demo(opt)
