@@ -85,7 +85,7 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
         # run tracking
         timer.tic()
         if use_cuda:
-            blob = torch.from_numpy(img).cuda().unsqueeze(0)
+            blob = torch.from_numpy(img).cuda().unsqueeze(0)    # [1, 3, 608, 1088]
         else:
             blob = torch.from_numpy(img).unsqueeze(0)
         online_targets = tracker.update(blob, img0)
@@ -170,8 +170,8 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
 
 
 if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     opt = opts().init()
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(opt.gpus[0])   # '1'
 
     if not opt.val_mot16:
         seqs_str = '''KITTI-13
