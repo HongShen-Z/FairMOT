@@ -28,13 +28,13 @@ def _topk_channel(scores, K=40):
 
 def _topk(scores, K=40):
     batch, cat, height, width = scores.size()
-      
+    # batch * cat * K，batch代表batchsize，cat代表类别数，K代表K个最大值。
     topk_scores, topk_inds = torch.topk(scores.view(batch, cat, -1), K)
-
+    # index取值：[0, W x H - 1]
     topk_inds = topk_inds % (height * width)
     topk_ys   = torch.true_divide(topk_inds, width).int().float()
     topk_xs   = (topk_inds % width).int().float()
-      
+    # batch * K，index取值：[0, cat x K - 1]
     topk_score, topk_ind = torch.topk(topk_scores.view(batch, -1), K)
     topk_clses = torch.true_divide(topk_ind, K).int()
     topk_inds = _gather_feat(
@@ -49,7 +49,7 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     batch, cat, height, width = heat.size()
 
     # heat = torch.sigmoid(heat)
-    # perform nms on heatmaps
+    # perform nms on heatmaps   8-近邻极大值点
     heat = _nms(heat)
 
     scores, inds, clses, ys, xs = _topk(heat, K=K)
