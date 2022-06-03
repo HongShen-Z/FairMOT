@@ -65,18 +65,15 @@ class opts(object):
     self.parser.add_argument('--num_iters', type=int, default=-1, help='default: #samples / batch_size.')
     self.parser.add_argument('--val_intervals', type=int, default=5, help='number of epochs to run validation.')
     self.parser.add_argument('--trainval', action='store_true',
-                             help='include validation in training and '
-                                  'test on test set')
+                             help='include validation in training and test on test set')
 
     # test
     self.parser.add_argument('--K', type=int, default=500, help='max number of output objects.')
     self.parser.add_argument('--not_prefetch_test', action='store_true', help='not use parallal data pre-processing.')
     self.parser.add_argument('--fix_res', action='store_true',
-                             help='fix testing resolution or keep '
-                                  'the original resolution')
+                             help='fix testing resolution or keep the original resolution')
     self.parser.add_argument('--keep_res', action='store_true',
-                             help='keep the original resolution'
-                                  ' during validation.')
+                             help='keep the original resolution during validation.')
     # tracking
     self.parser.add_argument('--test_mot16', default=False, help='test mot16')
     self.parser.add_argument('--val_mot15', default=False, help='val mot15')
@@ -93,23 +90,18 @@ class opts(object):
     self.parser.add_argument('--nms_thres', type=float, default=0.4, help='iou thresh for nms')
     self.parser.add_argument('--track_buffer', type=int, default=30, help='tracking buffer')
     self.parser.add_argument('--min-box-area', type=float, default=100, help='filter out tiny boxes')
-    self.parser.add_argument('--input-video', type=str,
-                             default='../videos/MOT16-03.mp4',
+    self.parser.add_argument('--input-video', type=str, default='../videos/MOT16-03.mp4',
                              help='path to the input video')
     self.parser.add_argument('--output-format', type=str, default='video', help='video or text')
     self.parser.add_argument('--output-root', type=str, default='../demos', help='expected output root path')
 
     # mot
-    self.parser.add_argument('--data_cfg', type=str,
-                             default='../src/lib/cfg/data.json',
-                             help='load data from cfg')
+    self.parser.add_argument('--data_cfg', type=str, default='../src/lib/cfg/data.json', help='load data from cfg')
     self.parser.add_argument('--data_dir', type=str, default='/home/zyf/dataset')
 
     # loss
     self.parser.add_argument('--mse_loss', action='store_true',
-                             help='use mse loss or focal loss to train '
-                                  'keypoint heatmaps.')
-
+                             help='use mse loss or focal loss to train keypoint heatmaps.')
     self.parser.add_argument('--reg_loss', default='l1', help='regression loss: sl1 | l1 | l2')
     self.parser.add_argument('--hm_weight', type=float, default=1, help='loss weight for keypoint heatmaps.')
     self.parser.add_argument('--off_weight', type=float, default=1, help='loss weight for keypoint local offsets.')
@@ -121,8 +113,7 @@ class opts(object):
     self.parser.add_argument('--multi_loss', default='uncertainty', help='multi_task loss: uncertainty | fix')
     self.parser.add_argument('--norm_wh', action='store_true', help='L1(\hat(y) / y, 1) or L1(\hat(y), y)')
     self.parser.add_argument('--dense_wh', action='store_true',
-                             help='apply weighted regression near center or '
-                                  'just apply regression on center point.')
+                             help='apply weighted regression near center or just apply regression on center point.')
     self.parser.add_argument('--cat_spec_wh', action='store_true', help='category specific bounding box size.')
     self.parser.add_argument('--not_reg_offset', action='store_true', help='not regress local offset.')
 
