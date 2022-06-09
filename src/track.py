@@ -263,6 +263,8 @@ if __name__ == '__main__':
         data_root = os.path.join(opt.data_dir, 'MOT20/images/test')
     seqs = [seq.strip() for seq in seqs_str.split()]
 
+    print(opt.val_mot16, seqs[1])
+
     main(opt,
          data_root=data_root,
          seqs=seqs,
