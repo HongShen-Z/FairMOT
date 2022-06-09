@@ -1,5 +1,5 @@
 {
-    "root":"/seu_share/home/dijunyong/220205723/dataset/MOT",
+    "root":"/seu_share/home/dijunyong/220205723/datasets/MOT",
     "train":
     {
         "mot17":"./mot17.train",
