@@ -8,8 +8,8 @@ def mkdirs(d):
         os.makedirs(d)
 
 
-seq_root = '~/datasets/MOT/MOT16/images/train'
-label_root = '~/datasets/MOT/MOT16/labels_with_ids/train'
+seq_root = '/seu_share/home/dijunyong/220205723/datasets/MOT/MOT16/images/train'
+label_root = '/seu_share/home/dijunyong/220205723/datasets/MOT/MOT16/labels_with_ids/train'
 mkdirs(label_root)
 seqs = [s for s in os.listdir(seq_root)]
 
