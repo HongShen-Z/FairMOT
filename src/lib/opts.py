@@ -97,7 +97,7 @@ class opts(object):
 
     # mot
     self.parser.add_argument('--data_cfg', type=str, default='../src/lib/cfg/data.json', help='load data from cfg')
-    self.parser.add_argument('--data_dir', type=str, default='~/dataset/MOT')
+    self.parser.add_argument('--data_dir', type=str, default='/seu_share/home/dijunyong/220205723/dataset/MOT')
 
     # loss
     self.parser.add_argument('--mse_loss', action='store_true',
