@@ -3,6 +3,7 @@
 #BSUB -o %J.out
 #BSUB -e %J.err
 #BSUB -q normal
+#BSUB -n 28
 
 module load anaconda3
 source activate
