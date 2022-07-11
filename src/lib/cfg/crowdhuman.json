@@ -1,5 +1,5 @@
 {
-    "root":"~/dataset",
+    "root":"/seu_share/home/dijunyong/220205723/datasets",
     "train":
     {
         "crowdhuman_train":"./crowdhuman.train",
@@ -7,10 +7,10 @@
     },
     "test_emb":
     {
-        "mot15":"./mot15.val"
+        "mot15":"./MOT/mot15.val"
     },
     "test":
     {
-        "mot15":"./mot15.val"
+        "mot15":"./MOT/mot15.val"
     }
 }

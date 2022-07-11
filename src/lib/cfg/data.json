@@ -1,8 +1,8 @@
 {
-    "root":"/seu_share/home/dijunyong/220205723/datasets/MOT",
+    "root":"/seu_share/home/dijunyong/220205723/datasets",
     "train":
     {
-        "mot17":"./mot17.train",
+        "mot17":"./MOT/mot17.train",
         "caltech":"./caltech.all",
         "citypersons":"./citypersons.train",
         "cuhksysu":"./cuhksysu.train",
@@ -11,10 +11,10 @@
     },
     "test_emb":
     {
-        "mot15":"./mot15.val"
+        "mot15":"./MOT/mot15.val"
     },
     "test":
     {
-        "mot15":"./mot15.val"
+        "mot15":"./MOT/mot15.val"
     }
 }
