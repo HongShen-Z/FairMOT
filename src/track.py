@@ -171,7 +171,8 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
 
 if __name__ == '__main__':
     opt = opts().init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(opt.gpus[0])   # '1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str   # '1'
+    exp_name = opt.exp_id
 
     if not opt.val_mot16:
         seqs_str = '''KITTI-13
@@ -181,7 +182,7 @@ if __name__ == '__main__':
                       TUD-Campus
                       TUD-Stadtmitte'''
         #seqs_str = '''TUD-Campus'''
-        data_root = os.path.join(opt.data_dir, 'MOT15/images/train')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT15/images/train')
     else:
         seqs_str = '''MOT16-02
                       MOT16-04
@@ -190,7 +191,7 @@ if __name__ == '__main__':
                       MOT16-10
                       MOT16-11
                       MOT16-13'''
-        data_root = os.path.join(opt.data_dir, 'MOT16/images/train')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT16/images/train')
     if opt.test_mot16:
         seqs_str = '''MOT16-01
                       MOT16-03
@@ -201,7 +202,7 @@ if __name__ == '__main__':
                       MOT16-14'''
         #seqs_str = '''MOT16-01 MOT16-07 MOT16-12 MOT16-14'''
         #seqs_str = '''MOT16-06 MOT16-08'''
-        data_root = os.path.join(opt.data_dir, 'MOT16/images/test')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT16/images/test')
     if opt.test_mot15:
         seqs_str = '''ADL-Rundle-1
                       ADL-Rundle-3
@@ -214,7 +215,7 @@ if __name__ == '__main__':
                       PETS09-S2L2
                       TUD-Crossing
                       Venice-1'''
-        data_root = os.path.join(opt.data_dir, 'MOT15/images/test')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT15/images/test')
     if opt.test_mot17:
         seqs_str = '''MOT17-01-SDP
                       MOT17-03-SDP
@@ -223,7 +224,7 @@ if __name__ == '__main__':
                       MOT17-08-SDP
                       MOT17-12-SDP
                       MOT17-14-SDP'''
-        data_root = os.path.join(opt.data_dir, 'MOT17/images/test')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT17/images/test')
     if opt.val_mot17:
         seqs_str = '''MOT17-02-SDP
                       MOT17-04-SDP
@@ -232,7 +233,7 @@ if __name__ == '__main__':
                       MOT17-10-SDP
                       MOT17-11-SDP
                       MOT17-13-SDP'''
-        data_root = os.path.join(opt.data_dir, 'MOT17/images/train')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT17/images/train')
     if opt.val_mot15:
         seqs_str = '''Venice-2
                       KITTI-13
@@ -244,29 +245,28 @@ if __name__ == '__main__':
                       TUD-Stadtmitte
                       ADL-Rundle-6
                       ADL-Rundle-8
-                      ETH-Pedcross2
-                      TUD-Stadtmitte'''
-        data_root = os.path.join(opt.data_dir, 'MOT15/images/train')
+                      ETH-Pedcross2'''
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT15/images/train')
     if opt.val_mot20:
         seqs_str = '''MOT20-01
                       MOT20-02
                       MOT20-03
                       MOT20-05
                       '''
-        data_root = os.path.join(opt.data_dir, 'MOT20/images/train')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT20/images/train')
     if opt.test_mot20:
         seqs_str = '''MOT20-04
                       MOT20-06
                       MOT20-07
                       MOT20-08
                       '''
-        data_root = os.path.join(opt.data_dir, 'MOT20/images/test')
+        data_root = os.path.join(opt.data_dir, 'MOT/MOT20/images/test')
     seqs = [seq.strip() for seq in seqs_str.split()]
 
     main(opt,
          data_root=data_root,
          seqs=seqs,
-         exp_name='MOT16_test_public_dla34',
+         exp_name=exp_name,
          show_image=False,
          save_images=False,
          save_videos=False)
