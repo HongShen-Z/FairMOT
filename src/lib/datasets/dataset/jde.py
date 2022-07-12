@@ -366,7 +366,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.num_classes = 1
 
         for ds, path in paths.items():
-            with open(path, 'r') as file:
+            with open(osp.join(root, path), 'r') as file:
                 self.img_files[ds] = file.readlines()
                 self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
                 self.img_files[ds] = list(filter(lambda x: len(x) > 0, self.img_files[ds]))
