@@ -28,7 +28,6 @@ def main(opt):
     data_config = json.load(f)
     trainset_paths = data_config['train']
     dataset_root = data_config['root']
-    print(trainset_paths)
     f.close()
     transforms = T.Compose([T.ToTensor()])
     dataset = Dataset(opt, dataset_root, trainset_paths, (1088, 608), augment=True, transforms=transforms)
