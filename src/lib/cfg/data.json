@@ -2,19 +2,19 @@
     "root":"/seu_share/home/dijunyong/220205723/datasets",
     "train":
     {
-        "mot17":"./MOT/mot17.train",
-        "caltech":"./caltech.all",
-        "citypersons":"./citypersons.train",
-        "cuhksysu":"./cuhksysu.train",
-        "prw":"./prw.train",
-        "eth":"./eth.train"
+        "mot17":"./data/mot17.train",
+        "caltech":"./data/caltech.all",
+        "citypersons":"./data/citypersons.train",
+        "cuhksysu":"./data/cuhksysu.train",
+        "prw":"./data/prw.train",
+        "eth":"./data/eth.train"
     },
     "test_emb":
     {
-        "mot15":"./MOT/mot15.val"
+        "mot15":"./data/mot15.val"
     },
     "test":
     {
-        "mot15":"./MOT/mot15.val"
+        "mot15":"./data/mot15.val"
     }
 }
