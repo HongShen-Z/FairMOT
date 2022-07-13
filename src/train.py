@@ -15,7 +15,7 @@ from lib.models.model import create_model, load_model, save_model
 from models.data_parallel import DataParallel
 from lib.logger import Logger
 from lib.datasets.dataset_factory import get_dataset
-from trains.train_factory import train_factory
+from lib.trains.train_factory import train_factory
 
 
 def main(opt):
