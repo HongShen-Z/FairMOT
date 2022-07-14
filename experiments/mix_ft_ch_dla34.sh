@@ -10,7 +10,7 @@ source activate
 conda deactivate
 conda activate fairmot
 cd src
-python train.py mot --exp_id mix_ft_ch_dla34 --load_model '../models/crowdhuman_dla34.pth' \
+python train.py mot --exp_id mix_ft_ch_dla34 --load_model '..exp/mot/crowdhuman_dla34/model_last.pth' \
 --data_cfg '../src/lib/cfg/data.json' --gpus $CUDA_VISIBLE_DEVICES \
 --batch_size 32 --lr 3e-4
 cd ..
