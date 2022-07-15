@@ -8,7 +8,7 @@
 module load anaconda3
 source activate
 conda deactivate
-conda activate fairmot
+conda activate FairMOT
 cd src
 python train.py mot --exp_id mix_ft_ch_dla34 --load_model '../exp/mot/crowdhuman_dla34/model_last.pth' \
 --data_cfg '../src/lib/cfg/data.json' --gpus $CUDA_VISIBLE_DEVICES \
