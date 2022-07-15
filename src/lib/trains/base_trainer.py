@@ -32,9 +32,13 @@ class BaseTrainer(object):
 
     def set_device(self, gpus, chunk_sizes, device):
         if len(gpus) > 1:
+            torch.cuda.set_device(gpus[0])
             self.model_with_loss = DataParallel(
                 self.model_with_loss, device_ids=gpus,
-                chunk_sizes=chunk_sizes).to(device)
+                chunk_sizes=chunk_sizes).cuda()
+            # self.model_with_loss = DataParallel(
+            #     self.model_with_loss, device_ids=gpus,
+            #     chunk_sizes=chunk_sizes).to(device)
         else:
             self.model_with_loss = self.model_with_loss.to(device)
 
