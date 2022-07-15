@@ -7,7 +7,6 @@ import torch
 from progress.bar import Bar
 from models.data_parallel import DataParallel
 from utils.utils import AverageMeter
-import collections.abc
 
 
 class ModleWithLoss(torch.nn.Module):
