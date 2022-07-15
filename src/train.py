@@ -58,6 +58,7 @@ def main(opt):
     print('Starting training...')
     Trainer = train_factory[opt.task]
     trainer = Trainer(opt, model, optimizer)
+    print(opt.gpus, opt.device)
     trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
     if opt.load_model != '':
