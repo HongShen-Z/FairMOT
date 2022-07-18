@@ -16,7 +16,7 @@ from tracker.multitracker import JDETracker
 from tracking_utils import visualization as vis
 from tracking_utils.log import logger
 from tracking_utils.timer import Timer
-from tracking_utils.evaluation import Evaluator
+from lib.tracking_utils.evaluation import Evaluator
 import datasets.dataset.jde as datasets
 
 from tracking_utils.utils import mkdir_if_missing
@@ -70,7 +70,6 @@ def write_results_score(filename, results, data_type):
 def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_image=True, frame_rate=30, use_cuda=True):
     if save_dir:
         mkdir_if_missing(save_dir)
-    # print(torch.cuda.is_available(), '22222222222222')
     tracker = JDETracker(opt, frame_rate=frame_rate)
     timer = Timer()
     results = []

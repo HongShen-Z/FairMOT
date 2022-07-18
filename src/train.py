@@ -69,7 +69,6 @@ def main(opt):
         mark = epoch if opt.save_all else 'last'
         log_dict_train, _ = trainer.train(epoch, train_loader)
         logger.write('epoch: {} |'.format(epoch))
-        print('-'*10, epoch, '-'*10)
         for k, v in log_dict_train.items():
             logger.scalar_summary('train_{}'.format(k), v, epoch)
             logger.write('{} {:8f} | '.format(k, v))

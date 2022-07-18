@@ -117,6 +117,7 @@ def data_parallel(module, inputs, device_ids=None, output_device=None, dim=0, mo
     return gather(outputs, output_device, dim)
 
 def DataParallel(module, device_ids=None, output_device=None, dim=0, chunk_sizes=None):
+    # TODO: 将DataParallel改为DistributedDataParallel
     if chunk_sizes is None:
         return torch.nn.DataParallel(module, device_ids, output_device, dim)
     standard_size = True

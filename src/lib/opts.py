@@ -26,7 +26,7 @@ class opts(object):
 
         # system
         self.parser.add_argument('--gpus', default='2, 3', help='-1 for CPU, use comma for multiple gpus')
-        self.parser.add_argument('--num_workers', type=int, default=8, help='dataloader threads. 0 for single-thread.')
+        self.parser.add_argument('--num_workers', type=int, default=-1, help='dataloader threads. 0 for single-thread.')
         self.parser.add_argument('--not_cuda_benchmark', action='store_true',
                                  help='disable when the input size is not fixed.')
         self.parser.add_argument('--seed', type=int, default=317, help='random seed')  # from CornerNet
@@ -128,6 +128,8 @@ class opts(object):
         opt.gpus_str = opt.gpus
         opt.gpus = [int(gpu) for gpu in opt.gpus.split(',')]
         opt.lr_step = [int(i) for i in opt.lr_step.split(',')]
+        if opt.num_workers < 0:
+            opt.num_workers = 4 * len(opt.gpus)
 
         opt.fix_res = not opt.keep_res
         print('Fix size testing.' if opt.fix_res else 'Keep resolution testing.')

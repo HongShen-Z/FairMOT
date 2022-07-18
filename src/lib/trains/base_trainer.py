@@ -16,8 +16,10 @@ class ModleWithLoss(torch.nn.Module):
         self.loss = loss
 
     def forward(self, batch):
-        outputs = self.model(batch['input'])
-        loss, loss_stats = self.loss(outputs, batch)
+        # 1. Forward pass with mixed precision
+        with torch.cuda.amp.autocast():
+            outputs = self.model(batch['input'])
+            loss, loss_stats = self.loss(outputs, batch)
         return outputs[-1], loss, loss_stats
 
 
@@ -72,7 +74,8 @@ class BaseTrainer(object):
             output, loss, loss_stats = model_with_loss(batch)
             loss = loss.mean()
             if phase == 'train':
-                self.optimizer.zero_grad()
+                # 2. add set_to_none=True
+                self.optimizer.zero_grad(set_to_none=True)
                 loss.backward()
                 self.optimizer.step()
             batch_time.update(time.time() - end)
