@@ -149,7 +149,7 @@ def _varifocal_loss(pred,
     pred_sigmoid = pred     # pred.sigmoid() 此处不需要，在mot.py里执行过
     target = target.type_as(pred)
     if iou_weighted:
-        focal_weight = target * (target > 0.0).float() + \
+        focal_weight = (1 - target) * (target > 0.0).float() + \
                        alpha * (pred_sigmoid - target).abs().pow(gamma) * \
                        (target <= 0.0).float()
     else:
