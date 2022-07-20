@@ -354,6 +354,7 @@ class DeformConv(nn.Module):
         self.conv = DCN(chi, cho, kernel_size=(3, 3), stride=1, padding=1, dilation=1, deformable_groups=1)
 
     def forward(self, x):
+        x = x.float()
         x = self.conv(x)
         x = self.actf(x)
         return x
