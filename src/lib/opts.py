@@ -102,8 +102,8 @@ class opts(object):
         self.parser.add_argument('--data_dir', type=str, default='/seu_share/home/dijunyong/220205723/datasets')
 
         # loss
-        self.parser.add_argument('--mse_loss', action='store_true',
-                                 help='use mse loss or focal loss to train keypoint heatmaps.')
+        self.parser.add_argument('--mse_loss', default='varifocal',
+                                 help='keypoint heatmaps loss: mse | focal | varifocal')
         self.parser.add_argument('--reg_loss', default='l1', help='regression loss: sl1 | l1 | l2')
         self.parser.add_argument('--hm_weight', type=float, default=1, help='loss weight for keypoint heatmaps.')
         self.parser.add_argument('--off_weight', type=float, default=1, help='loss weight for keypoint local offsets.')

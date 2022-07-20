@@ -11,8 +11,8 @@ import torchvision
 
 from fvcore.nn import sigmoid_focal_loss_jit
 
-from models.losses import FocalLoss, TripletLoss
-from models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss
+from ..models.losses import FocalLoss, VarifocalLoss, TripletLoss
+from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss
 from models.decode import mot_decode
 from models.utils import _sigmoid, _tranpose_and_gather_feat
 from utils.post_process import ctdet_post_process
@@ -22,12 +22,13 @@ from .base_trainer import BaseTrainer
 class MotLoss(torch.nn.Module):
     def __init__(self, opt):
         super(MotLoss, self).__init__()
-        self.crit = torch.nn.MSELoss() if opt.mse_loss else FocalLoss()
+        self.crit = torch.nn.MSELoss() if opt.mse_loss == 'mse' else \
+            FocalLoss() if opt.mse_loss == 'focal' else VarifocalLoss()
         self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
             RegLoss() if opt.reg_loss == 'sl1' else None
         self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
             NormRegL1Loss() if opt.norm_wh else \
-                RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
+            RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
         self.opt = opt
         self.emb_dim = opt.reid_dim
         self.nID = opt.nID
@@ -47,7 +48,7 @@ class MotLoss(torch.nn.Module):
         hm_loss, wh_loss, off_loss, id_loss = 0, 0, 0, 0
         for s in range(opt.num_stacks):
             output = outputs[s]
-            if not opt.mse_loss:
+            if opt.mse_loss != 'mse':
                 output['hm'] = _sigmoid(output['hm'])
 
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
