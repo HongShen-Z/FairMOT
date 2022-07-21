@@ -24,6 +24,9 @@ class Logger(object):
             os.makedirs(opt.save_dir)
         if not os.path.exists(opt.debug_dir):
             os.makedirs(opt.debug_dir)
+        model_dir = os.path.join(opt.save_dir, 'models')
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
 
         time_str = time.strftime('%Y-%m-%d-%H-%M')
 
