@@ -242,7 +242,7 @@ class VarifocalLoss(nn.Module):
                  use_sigmoid=True,
                  alpha=0.75,
                  gamma=2.0,
-                 iou_weighted=True,
+                 iou_weighted=False,
                  reduction='mean',
                  loss_weight=1.0):
         super(VarifocalLoss, self).__init__()
