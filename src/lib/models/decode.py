@@ -87,18 +87,18 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
         box_indx2, box_indy2 = xs + wh[..., 2:3] / 2, ys + wh[..., 3:4] / 2
     detections = torch.cat([bboxes, scores, clses], dim=2)
 
-    # ind_lt = (torch.mul(box_indy1, width) + box_indx1).int()
-    # ind_rt = (torch.mul(box_indy1, width) + box_indx2).int()
-    # ind_lb = (torch.mul(box_indy2, width) + box_indx1).int()
-    # ind_rb = (torch.mul(box_indy2, width) + box_indx2).int()
+    ind_lt = (torch.mul(box_indy1, width) + box_indx1).int()
+    ind_rt = (torch.mul(box_indy1, width) + box_indx2).int()
+    ind_lb = (torch.mul(box_indy2, width) + box_indx1).int()
+    ind_rb = (torch.mul(box_indy2, width) + box_indx2).int()
 
-    id_feature = _tranpose_and_gather_feat(id_feature, inds)
+    # id_feature = _tranpose_and_gather_feat(id_feature, inds)
     # 方案一：相加
-    # id_feature = 0.6 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rt) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lb) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    id_feature = 0.6 * _tranpose_and_gather_feat(id_feature, inds) \
+                 + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+                 + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rt) \
+                 + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lb) \
+                 + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
     # id_feature = 0.2 * _tranpose_and_gather_feat(id_feature, inds) \
     #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_lt) \
     #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_rt) \
