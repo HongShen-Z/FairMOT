@@ -107,13 +107,13 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
     # id_feature = 0.8 * _tranpose_and_gather_feat(id_feature, inds) \
     #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
     #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    id_feature = 0.4 * _tranpose_and_gather_feat(id_feature, inds) \
-                 + 0.3 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-                 + 0.3 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    # id_feature = 0.4 * _tranpose_and_gather_feat(id_feature, inds) \
+    #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+    #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_rb)
     # 方案二：点乘
-    # id_feature = torch.mul(_tranpose_and_gather_feat(id_feature, inds),
-    #                        torch.mul(_tranpose_and_gather_feat(id_feature, ind_lt),
-    #                                  _tranpose_and_gather_feat(id_feature, ind_rb)))
+    id_feature = torch.mul(_tranpose_and_gather_feat(id_feature, inds),
+                           torch.mul(_tranpose_and_gather_feat(id_feature, ind_lt),
+                                     _tranpose_and_gather_feat(id_feature, ind_rb)))
     # 方案三：拼接
     # id_feature = torch.cat([_tranpose_and_gather_feat(id_feature, inds), _tranpose_and_gather_feat(id_feature, ind_lt),
     #                         _tranpose_and_gather_feat(id_feature, ind_rb)], dim=2)
