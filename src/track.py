@@ -12,7 +12,7 @@ import motmetrics as mm
 import numpy as np
 import torch
 
-from tracker.multitracker import JDETracker
+from lib.tracker.multitracker import JDETracker
 from tracking_utils import visualization as vis
 from tracking_utils.log import logger
 from tracking_utils.timer import Timer

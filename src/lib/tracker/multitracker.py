@@ -9,14 +9,14 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from models import *
-from models.decode import mot_decode
-from models.model import create_model, load_model
-from models.utils import _tranpose_and_gather_feat
-from tracking_utils.kalman_filter import KalmanFilter
-from tracking_utils.log import logger
+from ..models.decode import mot_decode
+from ..models.model import create_model, load_model
+from ..models.utils import _tranpose_and_gather_feat
+from ..tracking_utils.kalman_filter import KalmanFilter
+from ..tracking_utils.log import logger
 from tracking_utils.utils import *
 from utils.image import get_affine_transform
-from utils.post_process import ctdet_post_process
+from ..utils.post_process import ctdet_post_process
 
 from tracker import matching
 
@@ -247,8 +247,8 @@ class JDETracker(object):
             id_feature = F.normalize(id_feature, dim=1)
 
             reg = output['reg'] if self.opt.reg_offset else None
-            dets, inds = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K)
-            id_feature = _tranpose_and_gather_feat(id_feature, inds)
+            dets, inds, id_feature = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K, id_feature=id_feature)
+            # id_feature = _tranpose_and_gather_feat(id_feature, inds)
             id_feature = id_feature.squeeze(0)
             id_feature = id_feature.cpu().numpy()
 

@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from .utils import _gather_feat, _tranpose_and_gather_feat
 
+
 def _nms(heat, kernel=3):
     pad = (kernel - 1) // 2
 
@@ -16,24 +17,26 @@ def _nms(heat, kernel=3):
 
 
 def _topk_channel(scores, K=40):
-      batch, cat, height, width = scores.size()
-      
-      topk_scores, topk_inds = torch.topk(scores.view(batch, cat, -1), K)
+    batch, cat, height, width = scores.size()
 
-      topk_inds = topk_inds % (height * width)
-      topk_ys   = torch.true_divide(topk_inds, width).int().float()
-      topk_xs   = (topk_inds % width).int().float()
+    topk_scores, topk_inds = torch.topk(scores.view(batch, cat, -1), K)
 
-      return topk_scores, topk_inds, topk_ys, topk_xs
+    topk_inds = topk_inds % (height * width)
+    topk_ys = torch.true_divide(topk_inds, width).int().float()
+    topk_xs = (topk_inds % width).int().float()
+
+    return topk_scores, topk_inds, topk_ys, topk_xs
+
 
 def _topk(scores, K=40):
+    """一共进行两次topk，第一次分别找出不同类里的前K个，然后在cat×K里再选出真正的前K个极大值"""
     batch, cat, height, width = scores.size()
     # batch * cat * K，batch代表batchsize，cat代表类别数，K代表K个最大值。
     topk_scores, topk_inds = torch.topk(scores.view(batch, cat, -1), K)
     # index取值：[0, W x H - 1]
     topk_inds = topk_inds % (height * width)
-    topk_ys   = torch.true_divide(topk_inds, width).int().float()
-    topk_xs   = (topk_inds % width).int().float()
+    topk_ys = torch.true_divide(topk_inds, width).int().float()
+    topk_xs = (topk_inds % width).int().float()
     # batch * K，index取值：[0, cat x K - 1]
     topk_score, topk_ind = torch.topk(topk_scores.view(batch, -1), K)
     topk_clses = torch.true_divide(topk_ind, K).int()
@@ -45,7 +48,7 @@ def _topk(scores, K=40):
     return topk_score, topk_inds, topk_clses, topk_ys, topk_xs
 
 
-def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
+def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
     batch, cat, height, width = heat.size()
 
     # heat = torch.sigmoid(heat)
@@ -73,11 +76,46 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
                             ys - wh[..., 1:2],
                             xs + wh[..., 2:3],
                             ys + wh[..., 3:4]], dim=2)
+        box_indx1, box_indy1 = xs - wh[..., 0:1], ys - wh[..., 1:2]
+        box_indx2, box_indy2 = xs + wh[..., 2:3], ys + wh[..., 3:4]
     else:
         bboxes = torch.cat([xs - wh[..., 0:1] / 2,
                             ys - wh[..., 1:2] / 2,
                             xs + wh[..., 0:1] / 2,
                             ys + wh[..., 1:2] / 2], dim=2)
+        box_indx1, box_indy1 = xs - wh[..., 0:1] / 2, ys - wh[..., 1:2] / 2
+        box_indx2, box_indy2 = xs + wh[..., 2:3] / 2, ys + wh[..., 3:4] / 2
     detections = torch.cat([bboxes, scores, clses], dim=2)
 
-    return detections, inds
+    # ind_lt = (torch.mul(box_indy1, width) + box_indx1).int()
+    # ind_rt = (torch.mul(box_indy1, width) + box_indx2).int()
+    # ind_lb = (torch.mul(box_indy2, width) + box_indx1).int()
+    # ind_rb = (torch.mul(box_indy2, width) + box_indx2).int()
+
+    id_feature = _tranpose_and_gather_feat(id_feature, inds)
+    # 方案一：相加
+    # id_feature = 0.6 * _tranpose_and_gather_feat(id_feature, inds) \
+    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rt) \
+    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lb) \
+    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    # id_feature = 0.2 * _tranpose_and_gather_feat(id_feature, inds) \
+    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_rt) \
+    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_lb) \
+    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    # id_feature = 0.8 * _tranpose_and_gather_feat(id_feature, inds) \
+    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    # id_feature = 0.4 * _tranpose_and_gather_feat(id_feature, inds) \
+    #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+    #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    # 方案二：点乘
+    # id_feature = torch.mul(_tranpose_and_gather_feat(id_feature, inds),
+    #                        torch.mul(_tranpose_and_gather_feat(id_feature, ind_lt),
+    #                                  _tranpose_and_gather_feat(id_feature, ind_rb)))
+    # 方案三：拼接
+    # id_feature = torch.cat([_tranpose_and_gather_feat(id_feature, inds), _tranpose_and_gather_feat(id_feature, ind_lt),
+    #                         _tranpose_and_gather_feat(id_feature, ind_rb)], dim=2)
+
+    return detections, inds, id_feature
