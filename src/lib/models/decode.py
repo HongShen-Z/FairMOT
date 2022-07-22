@@ -94,8 +94,8 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
 
     # id_feature = _tranpose_and_gather_feat(id_feature, inds)
     # 方案一：相加
-    print(xs.size, box_indx1.size)
-    print(inds.size, ind_lt.size)
+    print(xs.size(), box_indx1.size())
+    print(inds.size(), ind_lt.size())
     id_feature = 0.6 * _tranpose_and_gather_feat(id_feature, inds) \
                  + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
                  + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rt) \
