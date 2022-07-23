@@ -111,7 +111,7 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
     #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_lt) \
     #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_rb)
     # 方案二：点乘
-    id_feature = torch.mul(_tranpose_and_gather_feat(id_feature, inds),
+    id_feature = 4 * torch.mul(_tranpose_and_gather_feat(id_feature, inds),
                            torch.mul(_tranpose_and_gather_feat(id_feature, ind_lt),
                                      _tranpose_and_gather_feat(id_feature, ind_rb)))
     # 方案三：拼接
