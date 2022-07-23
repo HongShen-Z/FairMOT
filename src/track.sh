@@ -10,7 +10,7 @@ source activate
 conda deactivate
 conda activate fair
 python track.py mot --val_mot20 True --load_model ../exp/mot/mix_ft_ch_dla34/model_last.pth --conf_thres 0.4 \
---gpus $CUDA_VISIBLE_DEVICES --exp_id MOT20_add6
+--gpus $CUDA_VISIBLE_DEVICES --exp_id MOT20_add7
 #python track.py mot --exp_id MOT15val_dla34 --load_model ../models/fairmot_dla34.pth \
 #--conf_thres 0.6 --gpus $CUDA_VISIBLE_DEVICES
 
