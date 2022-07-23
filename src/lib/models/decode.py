@@ -48,7 +48,7 @@ def _topk(scores, K=40):
     return topk_score, topk_inds, topk_clses, topk_ys, topk_xs
 
 
-def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
+def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     batch, cat, height, width = heat.size()
 
     # heat = torch.sigmoid(heat)
@@ -76,21 +76,21 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
                             ys - wh[..., 1:2],
                             xs + wh[..., 2:3],
                             ys + wh[..., 3:4]], dim=2)
-        box_indx1, box_indy1 = xs - wh[..., 0:1], ys - wh[..., 1:2]
-        box_indx2, box_indy2 = xs + wh[..., 2:3], ys + wh[..., 3:4]
+        # box_indx1, box_indy1 = xs - wh[..., 0:1], ys - wh[..., 1:2]
+        # box_indx2, box_indy2 = xs + wh[..., 2:3], ys + wh[..., 3:4]
     else:
         bboxes = torch.cat([xs - wh[..., 0:1] / 2,
                             ys - wh[..., 1:2] / 2,
                             xs + wh[..., 0:1] / 2,
                             ys + wh[..., 1:2] / 2], dim=2)
-        box_indx1, box_indy1 = xs - wh[..., 0:1] / 2, ys - wh[..., 1:2] / 2
-        box_indx2, box_indy2 = xs + wh[..., 2:3] / 2, ys + wh[..., 3:4] / 2
+        # box_indx1, box_indy1 = xs - wh[..., 0:1] / 2, ys - wh[..., 1:2] / 2
+        # box_indx2, box_indy2 = xs + wh[..., 2:3] / 2, ys + wh[..., 3:4] / 2
     detections = torch.cat([bboxes, scores, clses], dim=2)
 
-    ind_lt = (torch.mul(box_indy1, width) + box_indx1).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
-    ind_rt = (torch.mul(box_indy1, width) + box_indx2).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
-    ind_lb = (torch.mul(box_indy2, width) + box_indx1).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
-    ind_rb = (torch.mul(box_indy2, width) + box_indx2).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
+    # ind_lt = (torch.mul(box_indy1, width) + box_indx1).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
+    # ind_rt = (torch.mul(box_indy1, width) + box_indx2).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
+    # ind_lb = (torch.mul(box_indy2, width) + box_indx1).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
+    # ind_rb = (torch.mul(box_indy2, width) + box_indx2).squeeze(2).to(torch.int64).clamp(0, height*width - 1)
 
     # id_feature = _tranpose_and_gather_feat(id_feature, inds)
     # 方案一：相加
@@ -125,11 +125,11 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
     # id_feature = 0.95 * _tranpose_and_gather_feat(id_feature, inds) \
     #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lt) \
     #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    id_feature = 0.9 * _tranpose_and_gather_feat(id_feature, inds) \
-                 + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-                 + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rt) \
-                 + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lb) \
-                 + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rb)
+    # id_feature = 0.9 * _tranpose_and_gather_feat(id_feature, inds) \
+    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lt) \
+    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rt) \
+    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lb) \
+    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rb)
     # 方案二：点乘
     # id_feature = 4 * torch.mul(_tranpose_and_gather_feat(id_feature, inds),
     #                        torch.mul(_tranpose_and_gather_feat(id_feature, ind_lt),
@@ -138,4 +138,4 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100, id_feature=None):
     # id_feature = torch.cat([_tranpose_and_gather_feat(id_feature, inds), _tranpose_and_gather_feat(id_feature, ind_lt),
     #                         _tranpose_and_gather_feat(id_feature, ind_rb)], dim=2)
 
-    return detections, inds, id_feature
+    return detections, inds

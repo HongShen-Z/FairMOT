@@ -247,8 +247,8 @@ class JDETracker(object):
             id_feature = F.normalize(id_feature, dim=1)
 
             reg = output['reg'] if self.opt.reg_offset else None
-            dets, inds, id_feature = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K, id_feature=id_feature)
-            # id_feature = _tranpose_and_gather_feat(id_feature, inds)
+            dets, inds = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K)
+            id_feature = _tranpose_and_gather_feat(id_feature, inds)
             id_feature = id_feature.squeeze(0)
             id_feature = id_feature.cpu().numpy()
 
