@@ -4,6 +4,34 @@ from __future__ import print_function
 
 import torch
 import numpy as np
+import os
+import re
+import shutil
+
+# # 为txt路径文件每行前加'MOT/'
+# for ds in os.listdir('./src/data/'):
+#     if 'mot' in ds:
+#         with open(os.path.join('./src/data', ds), 'r+') as f:
+#             lines = f.readlines()
+#             f.seek(0)
+#             lines = ['/'.join(['MOT', line]) for line in lines]
+#             f.writelines(lines)
+
+# # 提交到MOTChallenge时需要训练集的真值，改成对应数据集名称
+# src_root = 'E:\datasets\MOT\MOT17\\train'
+# dst_root = 'E:\Postgra\projects\FairMOT\demos\MOT17'
+# for name in os.listdir(src_root):
+#     shutil.copy(os.path.join(src_root, name, 'gt', 'gt.txt'), os.path.join(dst_root, name + '.txt'))
+
+# # 去掉txt路径文件每行中的'data/'
+# for ds in os.listdir('./src/data/'):
+#     if 'caltech' in ds:
+#         with open(os.path.join('./src/data', ds), 'r') as f:
+#             lines = f.readlines()
+#         newlines = [re.sub('data/', '', line, 1) for line in lines]
+#         with open(os.path.join('./src/data', ds), 'w') as f:
+#             f.writelines(newlines)
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

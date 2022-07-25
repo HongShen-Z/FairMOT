@@ -15,9 +15,9 @@ import copy
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms as T
 from cython_bbox import bbox_overlaps as bbox_ious
-from opts import opts
-from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
-from utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
+from ...opts import opts
+from ...utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
+from ...utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
 
 
 class LoadImages:  # for inference
@@ -356,7 +356,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
     std = None
     num_classes = 1
 
-    def __init__(self, opt, root, paths, img_size=(1088, 608), augment=False, transforms=None):
+    def __init__(self, opt, root, paths, path, img_size=(1088, 608), augment=False, transforms=None):
+        super().__init__(path, img_size, augment, transforms)
         self.opt = opt
         dataset_names = paths.keys()
         self.img_files = OrderedDict()
@@ -466,14 +467,19 @@ class JointDataset(LoadImagesAndLabels):  # for training
             bbox_xy[3] = bbox_xy[1] + bbox_xy[3]
 
             if h > 0 and w > 0:
-                radius = gaussian_radius((math.ceil(h), math.ceil(w)))
-                radius = max(0, int(radius))
-                radius = 6 if self.opt.mse_loss else radius
-                #radius = max(1, int(radius)) if self.opt.mse_loss else radius
+                # radius = gaussian_radius((math.ceil(h), math.ceil(w)))
+                # radius = max(0, int(radius))
+                # radius = 6 if self.opt.mse_loss else radius
+                # #radius = max(1, int(radius)) if self.opt.mse_loss else radius
+
+                rw, rh = gaussian_radius_xy((math.ceil(h), math.ceil(w)), self.opt.alpha)
+                rw = max(0, int(rw))
+                rh = max(0, int(rh))
                 ct = np.array(
                     [bbox[0], bbox[1]], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
-                draw_gaussian(hm[cls_id], ct_int, radius)
+                # draw_gaussian(hm[cls_id], ct_int, radius)
+                draw_gaussian(hm[cls_id], ct_int, rw, rh)
                 if self.opt.ltrb:
                     wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
                             bbox_amodal[2] - ct[0], bbox_amodal[3] - ct[1]
