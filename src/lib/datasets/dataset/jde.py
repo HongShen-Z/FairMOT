@@ -356,8 +356,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
     std = None
     num_classes = 1
 
-    def __init__(self, opt, root, paths, path, img_size=(1088, 608), augment=False, transforms=None):
-        super().__init__(path, img_size, augment, transforms)
+    def __init__(self, opt, root, paths, img_size=(1088, 608), augment=False, transforms=None):
         self.opt = opt
         dataset_names = paths.keys()
         self.img_files = OrderedDict()
