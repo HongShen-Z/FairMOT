@@ -661,7 +661,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
 
-        draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
+        draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_umich_gaussian
         for k in range(num_objs):
             label = labels[k]
             bbox = label[2:]
@@ -687,7 +687,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
             if h > 0 and w > 0:
                 radius = gaussian_radius((math.ceil(h), math.ceil(w)))
                 radius = max(0, int(radius))
-                radius = 6 if self.opt.mse_loss else radius
+                radius = 6 if self.opt.mse_loss == 'mse' else radius
                 #radius = max(1, int(radius)) if self.opt.mse_loss else radius
                 ct = np.array(
                     [bbox[0], bbox[1]], dtype=np.float32)
