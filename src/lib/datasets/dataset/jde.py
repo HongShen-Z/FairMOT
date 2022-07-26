@@ -7,7 +7,6 @@ import time
 from collections import OrderedDict
 
 import cv2
-import json
 import numpy as np
 import torch
 import copy
