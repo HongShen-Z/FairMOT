@@ -15,9 +15,9 @@ import copy
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms as T
 from cython_bbox import bbox_overlaps as bbox_ious
-from ...opts import opts
-from ...utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
-from ...utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
+from opts import opts
+from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
+from utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
 
 
 class LoadImages:  # for inference
@@ -490,7 +490,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 ids[k] = label[1]
                 bbox_xys[k] = bbox_xy
 
-        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg, 'ids': ids, 'bbox': bbox_xys}
+        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
+               'reg': reg, 'ids': ids, 'bbox': bbox_xys}
         return ret
 
 
