@@ -12,7 +12,7 @@ import torchvision
 from fvcore.nn import sigmoid_focal_loss_jit
 
 from ..models.losses import FocalLoss, VarifocalLoss, TripletLoss
-from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss
+from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, GiouLoss
 from models.decode import mot_decode
 from models.utils import _sigmoid, _tranpose_and_gather_feat
 from utils.post_process import ctdet_post_process
@@ -26,9 +26,10 @@ class MotLoss(torch.nn.Module):
             FocalLoss() if opt.mse_loss == 'focal' else VarifocalLoss()
         self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
             RegLoss() if opt.reg_loss == 'sl1' else None
-        self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
-            NormRegL1Loss() if opt.norm_wh else \
-            RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
+        # self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
+        #     NormRegL1Loss() if opt.norm_wh else \
+        #     RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
+        self.crit_wh = GiouLoss() if opt.dense_wh else self.crit_reg
         self.opt = opt
         self.emb_dim = opt.reid_dim
         self.nID = opt.nID
@@ -53,9 +54,13 @@ class MotLoss(torch.nn.Module):
 
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
             if opt.wh_weight > 0:
-                wh_loss += self.crit_reg(
-                    output['wh'], batch['reg_mask'],
-                    batch['ind'], batch['wh']) / opt.num_stacks
+                if opt.dense_wh:
+                    wh_loss += self.crit_wh(
+                        output['wh'], batch['hm'], batch['wh']) / opt.num_stacks
+                else:
+                    wh_loss += self.crit_wh(
+                        output['wh'], batch['reg_mask'],
+                        batch['ind'], batch['wh']) / opt.num_stacks
 
             if opt.reg_offset and opt.off_weight > 0:
                 off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
