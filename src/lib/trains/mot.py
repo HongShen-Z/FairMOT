@@ -56,7 +56,7 @@ class MotLoss(torch.nn.Module):
             if opt.wh_weight > 0:
                 if opt.dense_wh:
                     wh_loss += self.crit_wh(
-                        output['wh'], batch['hm'], batch['wh']) / opt.num_stacks
+                        output['wh'], batch['hm'], batch['bbox']) / opt.num_stacks
                 else:
                     wh_loss += self.crit_wh(
                         output['wh'], batch['reg_mask'],
