@@ -135,11 +135,11 @@ class GiouLoss(nn.Module):
         Computing the GIoU loss between a set of predicted bboxes and target bboxes.
         Arguments:
               output (batch x dim x h x w)      pred/target (batch, h, w, 4)
-              mask (batch x max_objects)        weight (batch x 4, h, w)
+              mask (batch x max_objects)        weight (batch, 4, h, w)
               ind (batch x max_objects)
               target (batch x max_objects x dim)
         """
-        pred = output
+        pred = output.permute(0, 2, 3, 1)
         pos_mask = weight > 0
         weight = weight[pos_mask].float()
         avg_factor = torch.sum(pos_mask).float().item() + 1e-6
