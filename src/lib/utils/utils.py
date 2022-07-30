@@ -38,7 +38,7 @@ def bbox_areas(bboxes, keep_axis=False):
     areas = (y_max - y_min + 1) * (x_max - x_min + 1)
     if keep_axis:
         return areas[:, None]
-    return areas.astype(np.float32)
+    return areas
 
 
 class AverageMeter(object):
