@@ -51,12 +51,26 @@ class MotLoss(torch.nn.Module):
             output = outputs[s]
             if opt.mse_loss != 'mse':
                 output['hm'] = _sigmoid(output['hm'])
-
             hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
+
             if opt.wh_weight > 0:
                 if opt.dense_wh:
+                    H, W = output['hm'].shape[2:]
+                    mask = batch['box_weight'].view(-1, H, W)
+                    base_step = opt.down_ratio
+                    shifts_x = torch.arange(0, (W - 1) * base_step + 1, base_step,
+                                            dtype=torch.float32, device=batch['hm'].device)
+                    shifts_y = torch.arange(0, (H - 1) * base_step + 1, base_step,
+                                            dtype=torch.float32, device=batch['hm'].device)
+                    shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+                    base_loc = torch.stack((shift_x, shift_y), dim=0)  # (2, h, w)
+                    # (batch, h, w, 4)
+                    pred_boxes = torch.cat((base_loc - output['wh'][:, [0, 1]],
+                                            base_loc + output['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
+                    # (batch, h, w, 4)
+                    boxes = batch['box_target'].permute(0, 2, 3, 1)
                     wh_loss += self.crit_wh(
-                        output['wh'], batch['hm'], batch['bbox']) / opt.num_stacks
+                        pred_boxes, mask, boxes) / opt.num_stacks
                 else:
                     wh_loss += self.crit_wh(
                         output['wh'], batch['reg_mask'],

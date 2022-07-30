@@ -8,6 +8,7 @@ import os
 import re
 import shutil
 
+
 # # 为txt路径文件每行前加'MOT/'
 # for ds in os.listdir('./src/data/'):
 #     if 'mot' in ds:
@@ -16,13 +17,13 @@ import shutil
 #             f.seek(0)
 #             lines = ['/'.join(['MOT', line]) for line in lines]
 #             f.writelines(lines)
-
+#
 # # 提交到MOTChallenge时需要训练集的真值，改成对应数据集名称
 # src_root = 'E:\datasets\MOT\MOT17\\train'
 # dst_root = 'E:\Postgra\projects\FairMOT\demos\MOT17'
 # for name in os.listdir(src_root):
 #     shutil.copy(os.path.join(src_root, name, 'gt', 'gt.txt'), os.path.join(dst_root, name + '.txt'))
-
+#
 # # 去掉txt路径文件每行中的'data/'
 # for ds in os.listdir('./src/data/'):
 #     if 'caltech' in ds:
@@ -32,9 +33,17 @@ import shutil
 #         with open(os.path.join('./src/data', ds), 'w') as f:
 #             f.writelines(newlines)
 
+def bbox_areas(bboxes, keep_axis=False):
+    x_min, y_min, x_max, y_max = bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 3]
+    areas = (y_max - y_min + 1) * (x_max - x_min + 1)
+    if keep_axis:
+        return areas[:, None]
+    return areas
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -49,7 +58,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         if self.count > 0:
-          self.avg = self.sum / self.count
+            self.avg = self.sum / self.count
 
 
 def xyxy2xywh(x):
@@ -70,6 +79,7 @@ def xywh2xyxy(x):
     y[:, 2] = (x[:, 0] + x[:, 2] / 2)
     y[:, 3] = (x[:, 1] + x[:, 3] / 2)
     return y
+
 
 def ap_per_class(tp, conf, pred_cls, target_cls):
     """ Compute the average precision, given the recall and precision curves.
@@ -178,8 +188,8 @@ def bbox_iou(box1, box2, x1y1x2y2=False):
     inter_area = torch.clamp(inter_rect_x2 - inter_rect_x1, 0) * torch.clamp(inter_rect_y2 - inter_rect_y1, 0)
     # Union Area
     b1_area = ((b1_x2 - b1_x1) * (b1_y2 - b1_y1))
-    b1_area = ((b1_x2 - b1_x1) * (b1_y2 - b1_y1)).view(-1,1).expand(N,M)
-    b2_area = ((b2_x2 - b2_x1) * (b2_y2 - b2_y1)).view(1,-1).expand(N,M)
+    b1_area = ((b1_x2 - b1_x1) * (b1_y2 - b1_y1)).view(-1, 1).expand(N, M)
+    b2_area = ((b2_x2 - b2_x1) * (b2_y2 - b2_y1)).view(1, -1).expand(N, M)
 
     return inter_area / (b1_area + b2_area - inter_area + 1e-16)
 
@@ -189,19 +199,20 @@ def generate_anchors(nGh, nGw, anchor_wh):
     yy, xx = np.meshgrid(np.arange(nGh), np.arange(nGw), indexing='ij')
 
     mesh = np.stack([xx, yy], axis=0)  # Shape 2, nGh, nGw
-    mesh = np.tile(np.expand_dims(mesh, axis=0), (nA, 1, 1, 1)) # Shape nA x 2 x nGh x nGw
-    anchor_offset_mesh = np.tile(np.expand_dims(np.expand_dims(anchor_wh, -1), -1), (1, 1, nGh, nGw))  # Shape nA x 2 x nGh x nGw
+    mesh = np.tile(np.expand_dims(mesh, axis=0), (nA, 1, 1, 1))  # Shape nA x 2 x nGh x nGw
+    anchor_offset_mesh = np.tile(np.expand_dims(np.expand_dims(anchor_wh, -1), -1),
+                                 (1, 1, nGh, nGw))  # Shape nA x 2 x nGh x nGw
     anchor_mesh = np.concatenate((mesh, anchor_offset_mesh), axis=1)  # Shape nA x 4 x nGh x nGw
     return anchor_mesh
 
 
 def encode_delta(gt_box_list, fg_anchor_list):
-    px, py, pw, ph = fg_anchor_list[:, 0], fg_anchor_list[:,1], \
-                     fg_anchor_list[:, 2], fg_anchor_list[:,3]
+    px, py, pw, ph = fg_anchor_list[:, 0], fg_anchor_list[:, 1], \
+                     fg_anchor_list[:, 2], fg_anchor_list[:, 3]
     gx, gy, gw, gh = gt_box_list[:, 0], gt_box_list[:, 1], \
                      gt_box_list[:, 2], gt_box_list[:, 3]
     dx = (gx - px) / pw
     dy = (gy - py) / ph
-    dw = np.log(gw/pw)
-    dh = np.log(gh/ph)
+    dw = np.log(gw / pw)
+    dh = np.log(gh / ph)
     return np.stack((dx, dy, dw, dh), axis=1)

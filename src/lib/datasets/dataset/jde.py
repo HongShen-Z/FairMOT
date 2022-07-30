@@ -16,7 +16,7 @@ from torchvision.transforms import transforms as T
 from cython_bbox import bbox_overlaps as bbox_ious
 from opts import opts
 from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
-from utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
+from utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta, bbox_areas
 
 
 class LoadImages:  # for inference
@@ -402,6 +402,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.max_objs = opt.K
         self.augment = augment
         self.transforms = transforms
+        self.wh_area_process = True
 
         print('=' * 80)
         print('dataset summary')
@@ -440,11 +441,28 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
+        box_target = np.ones((4, output_h, output_w), dtype=np.float32) * -1
+        reg_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_umich_gaussian
         for k in range(min(num_objs, self.max_objs)):
             label = labels[k]
             bbox = label[2:]
+
+            gt_box = copy.deepcopy(bbox)
+            gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
+            gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
+            gt_box[0] = np.clip(gt_box[0], 0, imgs.shape[2] - 1)
+            gt_box[1] = np.clip(gt_box[1], 0, imgs.shape[1] - 1)
+            gt_box[0] = gt_box[0] - gt_box[2] / 2
+            gt_box[1] = gt_box[1] - gt_box[3] / 2
+            gt_box[2] = gt_box[0] + gt_box[2]
+            gt_box[3] = gt_box[1] + gt_box[3]
+            if self.wh_area_process:
+                box_area_log = bbox_areas(gt_box).log
+            else:
+                box_area_log = bbox_areas(gt_box)
+
             cls_id = int(label[0])
             bbox[[0, 2]] = bbox[[0, 2]] * output_w
             bbox[[1, 3]] = bbox[[1, 3]] * output_h
@@ -478,6 +496,14 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 ct_int = ct.astype(np.int32)
                 # draw_gaussian(hm[cls_id], ct_int, radius)
                 draw_gaussian(hm[cls_id], ct_int, rw, rh)
+
+                box_target_inds = hm[cls_id] > 0
+                box_target[:, box_target_inds] = gt_box[:, None]
+                local_heatmap = hm[cls_id][box_target_inds]
+                ct_div = local_heatmap.sum()
+                local_heatmap *= box_area_log
+                reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
+
                 if self.opt.ltrb:
                     wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
                             bbox_amodal[2] - ct[0], bbox_amodal[3] - ct[1]
@@ -490,7 +516,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 bbox_xys[k] = bbox_xy
 
         ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
-               'reg': reg, 'ids': ids, 'bbox': bbox_xys}
+               'reg': reg, 'ids': ids, 'bbox': bbox_xys, 'box_target': box_target, 'box_weight': reg_weight}
         return ret
 
 
