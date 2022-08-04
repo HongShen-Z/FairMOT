@@ -146,6 +146,10 @@ class GiouLoss(nn.Module):
         avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         bboxes1 = pred[pos_mask].view(-1, 4)
         bboxes2 = target[pos_mask].view(-1, 4)
+        print('-' * 30)
+        print(bboxes1.min(), bboxes1.max(), bboxes1)
+        print('#' * 30)
+        print(bboxes2.min(), bboxes2.max(), bboxes2)
 
         lt = torch.max(bboxes1[:, :2], bboxes2[:, :2])  # [rows, 2]
         rb = torch.min(bboxes1[:, 2:], bboxes2[:, 2:])  # [rows, 2]
@@ -163,8 +167,6 @@ class GiouLoss(nn.Module):
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
-        print('iou_distances: ', iou_distances)
-        print('weight: ', weight)
         return torch.sum(iou_distances * weight)[None] / avg_factor
 
 
