@@ -147,9 +147,7 @@ class GiouLoss(nn.Module):
         bboxes1 = pred[pos_mask].view(-1, 4)
         bboxes2 = target[pos_mask].view(-1, 4)
         print('-' * 30)
-        print(bboxes1.min(), bboxes1.max(), bboxes1)
-        print('#' * 30)
-        print(bboxes2.min(), bboxes2.max(), bboxes2)
+        print(bboxes1)
 
         lt = torch.max(bboxes1[:, :2], bboxes2[:, :2])  # [rows, 2]
         rb = torch.min(bboxes1[:, 2:], bboxes2[:, 2:])  # [rows, 2]
