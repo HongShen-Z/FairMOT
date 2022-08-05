@@ -309,10 +309,10 @@ def random_affine(img, targets=None, degrees=(-10, 10), translate=(.1, .1), scal
             xy = np.concatenate((x - w / 2, y - h / 2, x + w / 2, y + h / 2)).reshape(4, n).T
 
             # reject warped points outside of image
-            np.clip(xy[:, 0], 0, width, out=xy[:, 0])
-            np.clip(xy[:, 2], 0, width, out=xy[:, 2])
-            np.clip(xy[:, 1], 0, height, out=xy[:, 1])
-            np.clip(xy[:, 3], 0, height, out=xy[:, 3])
+            # np.clip(xy[:, 0], 0, width, out=xy[:, 0])
+            # np.clip(xy[:, 2], 0, width, out=xy[:, 2])
+            # np.clip(xy[:, 1], 0, height, out=xy[:, 1])
+            # np.clip(xy[:, 3], 0, height, out=xy[:, 3])
             w = xy[:, 2] - xy[:, 0]
             h = xy[:, 3] - xy[:, 1]
             area = w * h
@@ -452,10 +452,10 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box = copy.deepcopy(bbox)
             gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
             gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
-            gt_box[0] = np.clip(gt_box[0] - gt_box[2] / 2, 0, imgs.shape[2] - 1)
-            gt_box[1] = np.clip(gt_box[1] - gt_box[3] / 2, 0, imgs.shape[1] - 1)
-            gt_box[2] = np.clip(gt_box[0] + gt_box[2], 0, imgs.shape[2] - 1)
-            gt_box[3] = np.clip(gt_box[1] + gt_box[3], 0, imgs.shape[1] - 1)
+            gt_box[0] = gt_box[0] - gt_box[2] / 2
+            gt_box[1] = gt_box[1] - gt_box[3] / 2
+            gt_box[2] = gt_box[0] + gt_box[2]
+            gt_box[3] = gt_box[1] + gt_box[3]
             if self.wh_area_process:
                 box_area_log = np.log(bbox_areas(gt_box))
             else:
