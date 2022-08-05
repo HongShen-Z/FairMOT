@@ -452,12 +452,10 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box = copy.deepcopy(bbox)
             gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
             gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
-            gt_box[0] = np.clip(gt_box[0], 0, imgs.shape[2] - 1)
-            gt_box[1] = np.clip(gt_box[1], 0, imgs.shape[1] - 1)
-            gt_box[0] = np.max(gt_box[0] - gt_box[2] / 2, 0)
-            gt_box[1] = np.max(gt_box[1] - gt_box[3] / 2, 0)
-            gt_box[2] = np.min(gt_box[0] + gt_box[2], imgs.shape[2])
-            gt_box[3] = np.min(gt_box[1] + gt_box[3], imgs.shape[1])
+            gt_box[0] = np.clip(gt_box[0] - gt_box[2] / 2, 0, imgs.shape[2] - 1)
+            gt_box[1] = np.clip(gt_box[1] - gt_box[3] / 2, 0, imgs.shape[1] - 1)
+            gt_box[2] = np.clip(gt_box[0] + gt_box[2], 0, imgs.shape[2] - 1)
+            gt_box[3] = np.clip(gt_box[1] + gt_box[3], 0, imgs.shape[1] - 1)
             if self.wh_area_process:
                 box_area_log = np.log(bbox_areas(gt_box))
             else:
