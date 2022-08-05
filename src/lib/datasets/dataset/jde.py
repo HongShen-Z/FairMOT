@@ -456,8 +456,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box[1] = np.clip(gt_box[1], 0, imgs.shape[1] - 1)
             gt_box[0] = np.max(gt_box[0] - gt_box[2] / 2, 0)
             gt_box[1] = np.max(gt_box[1] - gt_box[3] / 2, 0)
-            gt_box[2] = gt_box[0] + gt_box[2]
-            gt_box[3] = gt_box[1] + gt_box[3]
+            gt_box[2] = np.min(gt_box[0] + gt_box[2], imgs.shape[2])
+            gt_box[3] = np.min(gt_box[1] + gt_box[3], imgs.shape[1])
             if self.wh_area_process:
                 box_area_log = np.log(bbox_areas(gt_box))
             else:
