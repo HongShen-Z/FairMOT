@@ -481,7 +481,7 @@ class DLASeg(nn.Module):
             z[head] = self.__getattr__(head)(y[-1])
             # --------------------dev-------------------- #
             if 'wh' in head:
-                z[head] = F.relu(z[head])
+                z[head] = F.relu(z[head]) * 16.
         return [z]
 
 
