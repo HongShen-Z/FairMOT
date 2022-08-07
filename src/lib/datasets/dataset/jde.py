@@ -496,6 +496,9 @@ class JointDataset(LoadImagesAndLabels):  # for training
 
                 box_target_inds = hm[cls_id] > 0
                 box_target[:, box_target_inds] = gt_box[:, None]
+                print(box_target_inds, box_target_inds.shape)
+                print(gt_box, gt_box.shape, gt_box[:, None].shape)
+                print(box_target, box_target.shape)
                 local_heatmap = hm[cls_id][box_target_inds]
                 ct_div = local_heatmap.sum()
                 local_heatmap *= box_area_log
