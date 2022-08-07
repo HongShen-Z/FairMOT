@@ -6,7 +6,7 @@ import torch.utils.data
 
 if __name__ == '__main__':
     opt = opts().parse()
-    with open('src/lib/cfg/crowdhuman.json') as f:
+    with open('lib/cfg/crowdhuman.json') as f:
         data_config = json.load(f)
         trainset_paths = data_config['train']
         dataset_root = data_config['root']
