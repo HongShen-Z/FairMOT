@@ -9,4 +9,4 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
-python test.py
+python test.py mot
