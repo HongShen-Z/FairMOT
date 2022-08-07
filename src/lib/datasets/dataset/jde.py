@@ -472,7 +472,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
             bbox[1] = np.clip(bbox[1], 0, output_h - 1)
             h = bbox[3]
             w = bbox[2]
-            print(h, w)
 
             bbox_xy = copy.deepcopy(bbox)
             bbox_xy[0] = bbox_xy[0] - bbox_xy[2] / 2
@@ -495,12 +494,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 # draw_gaussian(hm[cls_id], ct_int, radius)
                 draw_gaussian(hm[cls_id], ct_int, rw, rh)
 
-                print(hm[cls_id])
                 box_target_inds = hm[cls_id] > 0
                 box_target[:, box_target_inds] = gt_box[:, None]
-                print(box_target_inds, box_target_inds.shape)
-                print(gt_box, gt_box.shape, gt_box[:, None].shape)
-                print(box_target, box_target.shape)
                 local_heatmap = hm[cls_id][box_target_inds]
                 ct_div = local_heatmap.sum()
                 local_heatmap *= box_area_log
