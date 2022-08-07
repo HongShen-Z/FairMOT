@@ -22,6 +22,7 @@ if __name__ == '__main__':
         drop_last=True
     )
     for iter_id, batch in enumerate(train_loader):
-        print(batch['box_target'])
-        break
+        if batch['box_target'] > 0:
+            print(batch['box_target'])
+            break
 

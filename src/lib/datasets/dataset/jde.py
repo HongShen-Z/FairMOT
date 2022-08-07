@@ -455,7 +455,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box[1] = gt_box[1] - gt_box[3] / 2
             gt_box[2] = gt_box[0] + gt_box[2]
             gt_box[3] = gt_box[1] + gt_box[3]
-            print(gt_box)
             if self.wh_area_process:
                 box_area_log = np.log(bbox_areas(gt_box))
             else:
