@@ -495,6 +495,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 # draw_gaussian(hm[cls_id], ct_int, radius)
                 draw_gaussian(hm[cls_id], ct_int, rw, rh)
 
+                print(hm[cls_id])
                 box_target_inds = hm[cls_id] > 0
                 box_target[:, box_target_inds] = gt_box[:, None]
                 print(box_target_inds, box_target_inds.shape)
