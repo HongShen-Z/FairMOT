@@ -1,5 +1,5 @@
 from src.lib.datasets.dataset.jde import JointDataset
-from opts import opts
+from src.lib.opts import opts
 import json
 from torchvision.transforms import transforms as T
 import torch.utils.data
