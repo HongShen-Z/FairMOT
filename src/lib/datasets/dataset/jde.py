@@ -472,6 +472,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
             bbox[1] = np.clip(bbox[1], 0, output_h - 1)
             h = bbox[3]
             w = bbox[2]
+            print(h, w)
 
             bbox_xy = copy.deepcopy(bbox)
             bbox_xy[0] = bbox_xy[0] - bbox_xy[2] / 2
