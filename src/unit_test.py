@@ -24,8 +24,6 @@ if __name__ == '__main__':
         drop_last=True
     )
     for iter_id, batch in enumerate(train_loader):
-        for i in batch['box_target'].view(-1):
-            print(i, end=', ')
         print(sum(batch['box_target'].view(-1) > 0), len(batch['box_target'].view(-1)))
         break
 
