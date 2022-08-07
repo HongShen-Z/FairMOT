@@ -1,3 +1,5 @@
+import numpy as np
+
 from lib.datasets.dataset.jde import JointDataset
 from lib.opts import opts
 import json
@@ -22,7 +24,7 @@ if __name__ == '__main__':
         drop_last=True
     )
     for iter_id, batch in enumerate(train_loader):
-        if not torch.equal(batch['box_target'].cpu(), torch.zeros(batch['box_target'].shape)):
+        if not torch.equal(batch['box_target'].cpu(), torch.zeros(batch['box_target'].shape, dtype=torch.float32)):
             print(batch['box_target'])
             break
 
