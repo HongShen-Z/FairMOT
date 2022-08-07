@@ -23,6 +23,5 @@ if __name__ == '__main__':
     )
     for iter_id, batch in enumerate(train_loader):
         print(batch['box_target'])
-        print(batch['box_weight'])
         break
 

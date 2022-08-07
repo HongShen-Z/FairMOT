@@ -440,7 +440,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
-        box_target = np.ones((4, output_h, output_w), dtype=np.float32) * -1
+        box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
         reg_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_umich_gaussian
@@ -455,6 +455,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box[1] = gt_box[1] - gt_box[3] / 2
             gt_box[2] = gt_box[0] + gt_box[2]
             gt_box[3] = gt_box[1] + gt_box[3]
+            print(gt_box)
             if self.wh_area_process:
                 box_area_log = np.log(bbox_areas(gt_box))
             else:
