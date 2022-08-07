@@ -22,7 +22,7 @@ if __name__ == '__main__':
         drop_last=True
     )
     for iter_id, batch in enumerate(train_loader):
-        if batch['box_target'] > 0:
+        if not torch.equal(batch['box_target'].cpu(), torch.zeros(batch['box_target'].shape)):
             print(batch['box_target'])
             break
 
