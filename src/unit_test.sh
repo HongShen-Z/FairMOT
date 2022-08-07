@@ -9,4 +9,6 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
+cd src
 python unit_test.py mot
+cd ..
