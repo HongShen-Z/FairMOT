@@ -129,7 +129,6 @@ class FocalLoss(nn.Module):
 class GiouLoss(nn.Module):
     def __int__(self):
         super(GiouLoss, self).__int__()
-        self.eps = 1e-10
 
     def forward(self, pred, weight, target):
         """
@@ -140,7 +139,7 @@ class GiouLoss(nn.Module):
               ind (batch x max_objects)
               target (batch x max_objects x dim)
         """
-        eps = self.eps
+        eps = 1e-10
         # TODO: 这里avg_factor用的是权重之和，但按公式应该是样本数量，可以试一试torch.sum(pos_mask).float().item() + 1e-4
         # avg_factor = weight.sum() + 1e-4
         pos_mask = weight > 1e-2
