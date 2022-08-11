@@ -65,9 +65,10 @@ class MotLoss(torch.nn.Module):
                     shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
                     base_loc = torch.stack((shift_x, shift_y), dim=0)  # (2, h, w)
                     print(base_loc.shape)
+                    print(output['wh'].shape)
                     # (batch, h, w, 4)
-                    pred_boxes = torch.cat((base_loc - output['wh'][..., [0, 1]],
-                                            base_loc + output['wh'][..., [2, 3]]), dim=1).permute(0, 2, 3, 1)
+                    pred_boxes = torch.cat((base_loc - output['wh'][:, [0, 1]],
+                                            base_loc + output['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
                     # (batch, h, w, 4)
                     boxes = batch['box_target'].permute(0, 2, 3, 1)
                     wh_loss += self.crit_wh(
