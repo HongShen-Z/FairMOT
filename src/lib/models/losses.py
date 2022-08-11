@@ -140,10 +140,10 @@ class GiouLoss(nn.Module):
               target (batch x max_objects x dim)
         """
         # TODO: 这里avg_factor用的是权重之和，但按公式应该是样本数量，可以试一试torch.sum(pos_mask).float().item() + 1e-4
-        avg_factor = weight.sum() + 1e-4
-        pos_mask = weight > 0
-        weight = weight[pos_mask].float()
-        # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
+        # avg_factor = weight.sum() + 1e-4
+        pos_mask = weight > 1e-2
+        # weight = weight[pos_mask].float()
+        avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         bboxes1 = pred[pos_mask].view(-1, 4)
         bboxes2 = target[pos_mask].view(-1, 4)
         print('#' * 100)
@@ -167,7 +167,8 @@ class GiouLoss(nn.Module):
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
-        return torch.sum(iou_distances * weight)[None] / avg_factor
+        return torch.sum(iou_distances)[None] / avg_factor
+        # return torch.sum(iou_distances * weight)[None] / avg_factor
 
 
 class RegLoss(nn.Module):

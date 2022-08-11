@@ -455,10 +455,10 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box[1] = gt_box[1] - gt_box[3] / 2
             gt_box[2] = gt_box[0] + gt_box[2]
             gt_box[3] = gt_box[1] + gt_box[3]
-            if self.wh_area_process:
-                box_area_log = np.log(bbox_areas(gt_box))
-            else:
-                box_area_log = bbox_areas(gt_box)
+            # if self.wh_area_process:
+            #     box_area_log = np.log(bbox_areas(gt_box))
+            # else:
+            #     box_area_log = bbox_areas(gt_box)
 
             cls_id = int(label[0])
             bbox[[0, 2]] = bbox[[0, 2]] * output_w
@@ -496,10 +496,11 @@ class JointDataset(LoadImagesAndLabels):  # for training
 
                 box_target_inds = hm[cls_id] > 0
                 box_target[:, box_target_inds] = gt_box[:, None]
-                local_heatmap = hm[cls_id][box_target_inds]
-                ct_div = local_heatmap.sum()
-                local_heatmap *= box_area_log
-                reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
+                # local_heatmap = hm[cls_id][box_target_inds]
+                # ct_div = local_heatmap.sum()
+                # local_heatmap *= box_area_log
+                # reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
+                reg_weight[cls_id, box_target_inds] = hm[cls_id][box_target_inds]
 
                 if self.opt.ltrb:
                     wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
