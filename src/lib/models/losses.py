@@ -130,46 +130,103 @@ class GiouLoss(nn.Module):
     def __int__(self):
         super(GiouLoss, self).__int__()
 
-    def forward(self, pred, weight, target):
+    def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
         """
-        Computing the GIoU loss between a set of predicted bboxes and target bboxes.
-        Arguments:
-              output (batch x dim x h x w)      pred/target (batch, h, w, 4)
-              mask (batch x max_objects)        weight (batch × 1, h, w)
-              ind (batch x max_objects)
-              target (batch x max_objects x dim)
+       https://github.com/sfzhang15/ATSS/blob/master/atss_core/modeling/rpn/atss/loss.py#L36
+        :param preds:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
+        :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
+        :return: loss
         """
-        eps = 1e-10
-        # TODO: 这里avg_factor用的是权重之和，但按公式应该是样本数量，可以试一试torch.sum(pos_mask).float().item() + 1e-4
-        # avg_factor = weight.sum() + 1e-4
-        pos_mask = weight > 1e-2
-        # weight = weight[pos_mask].float()
-        avg_factor = torch.sum(pos_mask).float().item() + 1e-4
-        bboxes1 = pred[pos_mask].view(-1, 4)
-        bboxes2 = target[pos_mask].view(-1, 4)
+        pos_mask = weight > 1e-3
+        # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
+        preds = preds[pos_mask].view(-1, 4)
+        bbox = bbox[pos_mask].view(-1, 4)
         print('#' * 100)
-        print(bboxes1)
+        print(preds)
         print('-' * 100)
-        print(bboxes2)
+        print(bbox)
+        ix1 = torch.max(preds[:, 0], bbox[:, 0])
+        iy1 = torch.max(preds[:, 1], bbox[:, 1])
+        ix2 = torch.min(preds[:, 2], bbox[:, 2])
+        iy2 = torch.min(preds[:, 3], bbox[:, 3])
 
-        lt = torch.max(bboxes1[:, :2], bboxes2[:, :2])  # [rows, 2]
-        rb = torch.min(bboxes1[:, 2:], bboxes2[:, 2:])  # [rows, 2]
-        wh = (rb - lt).clamp(min=0)  # [rows, 2]
-        enclose_x1y1 = torch.min(bboxes1[:, :2], bboxes2[:, :2])
-        enclose_x2y2 = torch.max(bboxes1[:, 2:], bboxes2[:, 2:])
-        enclose_wh = (enclose_x2y2 - enclose_x1y1).clamp(min=0)
+        iw = (ix2 - ix1 + 1.0).clamp(0.)
+        ih = (iy2 - iy1 + 1.0).clamp(0.)
 
-        overlap = wh[:, 0] * wh[:, 1]
-        ap = (bboxes1[:, 2] - bboxes1[:, 0]) * (bboxes1[:, 3] - bboxes1[:, 1])
-        ag = (bboxes2[:, 2] - bboxes2[:, 0]) * (bboxes2[:, 3] - bboxes2[:, 1])
-        ious = overlap / (ap + ag - overlap + eps)
+        # overlap
+        inters = iw * ih
 
-        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + eps    # i.e. C in paper
-        u = ap + ag - overlap
-        gious = ious - (enclose_area - u) / enclose_area
-        iou_distances = 1 - gious
-        return torch.sum(iou_distances) / avg_factor
-        # return torch.sum(iou_distances * weight)[None] / avg_factor
+        # union
+        uni = (preds[:, 2] - preds[:, 0] + 1.0) * (preds[:, 3] - preds[:, 1] + 1.0) + (
+                    bbox[:, 2] - bbox[:, 0] + 1.0) * (
+                      bbox[:, 3] - bbox[:, 1] + 1.0) - inters + eps
+
+        # ious
+        ious = inters / uni
+
+        ex1 = torch.min(preds[:, 0], bbox[:, 0])
+        ey1 = torch.min(preds[:, 1], bbox[:, 1])
+        ex2 = torch.max(preds[:, 2], bbox[:, 2])
+        ey2 = torch.max(preds[:, 3], bbox[:, 3])
+        ew = (ex2 - ex1 + 1.0).clamp(min=0.)
+        eh = (ey2 - ey1 + 1.0).clamp(min=0.)
+
+        # enclose erea
+        enclose = ew * eh + eps
+
+        giou = ious - (enclose - uni) / enclose
+
+        loss = 1 - giou
+
+        if reduction == 'mean':
+            loss = torch.mean(loss)
+        elif reduction == 'sum':
+            loss = torch.sum(loss)
+        else:
+            raise NotImplementedError
+        return loss
+
+
+    # def forward(self, pred, weight, target):
+    #     """
+    #     Computing the GIoU loss between a set of predicted bboxes and target bboxes.
+    #     Arguments:
+    #           output (batch x dim x h x w)      pred/target (batch, h, w, 4)
+    #           mask (batch x max_objects)        weight (batch × 1, h, w)
+    #           ind (batch x max_objects)
+    #           target (batch x max_objects x dim)
+    #     """
+    #     eps = 1e-10
+    #     # TODO: 这里avg_factor用的是权重之和，但按公式应该是样本数量，可以试一试torch.sum(pos_mask).float().item() + 1e-4
+    #     # avg_factor = weight.sum() + 1e-4
+    #     pos_mask = weight > 1e-2
+    #     # weight = weight[pos_mask].float()
+    #     avg_factor = torch.sum(pos_mask).float().item() + 1e-4
+    #     bboxes1 = pred[pos_mask].view(-1, 4)
+    #     bboxes2 = target[pos_mask].view(-1, 4)
+    #     print('#' * 100)
+    #     print(bboxes1)
+    #     print('-' * 100)
+    #     print(bboxes2)
+    #
+    #     lt = torch.max(bboxes1[:, :2], bboxes2[:, :2])  # [rows, 2]
+    #     rb = torch.min(bboxes1[:, 2:], bboxes2[:, 2:])  # [rows, 2]
+    #     wh = (rb - lt).clamp(min=0)  # [rows, 2]
+    #     enclose_x1y1 = torch.min(bboxes1[:, :2], bboxes2[:, :2])
+    #     enclose_x2y2 = torch.max(bboxes1[:, 2:], bboxes2[:, 2:])
+    #     enclose_wh = (enclose_x2y2 - enclose_x1y1).clamp(min=0)
+    #
+    #     overlap = wh[:, 0] * wh[:, 1]
+    #     ap = (bboxes1[:, 2] - bboxes1[:, 0]) * (bboxes1[:, 3] - bboxes1[:, 1])
+    #     ag = (bboxes2[:, 2] - bboxes2[:, 0]) * (bboxes2[:, 3] - bboxes2[:, 1])
+    #     ious = overlap / (ap + ag - overlap + eps)
+    #
+    #     enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + eps    # i.e. C in paper
+    #     u = ap + ag - overlap
+    #     gious = ious - (enclose_area - u) / enclose_area
+    #     iou_distances = 1 - gious
+    #     return torch.sum(iou_distances) / avg_factor
+    #     # return torch.sum(iou_distances * weight)[None] / avg_factor
 
 
 class RegLoss(nn.Module):
