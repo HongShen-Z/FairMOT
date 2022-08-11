@@ -127,9 +127,9 @@ class FocalLoss(nn.Module):
 
 
 class GiouLoss(nn.Module):
-    def __int__(self):
+    def __int__(self, eps=1e-10):
         super(GiouLoss, self).__int__()
-        self.eps = 1e-10
+        self.eps = eps
 
     def forward(self, pred, weight, target):
         """
