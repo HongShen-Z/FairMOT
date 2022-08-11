@@ -129,6 +129,7 @@ class FocalLoss(nn.Module):
 class GiouLoss(nn.Module):
     def __int__(self):
         super(GiouLoss, self).__int__()
+        self.eps = 1e-10
 
     def forward(self, pred, weight, target):
         """
@@ -153,21 +154,21 @@ class GiouLoss(nn.Module):
 
         lt = torch.max(bboxes1[:, :2], bboxes2[:, :2])  # [rows, 2]
         rb = torch.min(bboxes1[:, 2:], bboxes2[:, 2:])  # [rows, 2]
-        wh = (rb - lt + 1).clamp(min=0)  # [rows, 2]
+        wh = (rb - lt).clamp(min=0)  # [rows, 2]
         enclose_x1y1 = torch.min(bboxes1[:, :2], bboxes2[:, :2])
         enclose_x2y2 = torch.max(bboxes1[:, 2:], bboxes2[:, 2:])
-        enclose_wh = (enclose_x2y2 - enclose_x1y1 + 1).clamp(min=0)
+        enclose_wh = (enclose_x2y2 - enclose_x1y1).clamp(min=0)
 
         overlap = wh[:, 0] * wh[:, 1]
-        ap = (bboxes1[:, 2] - bboxes1[:, 0] + 1) * (bboxes1[:, 3] - bboxes1[:, 1] + 1)
-        ag = (bboxes2[:, 2] - bboxes2[:, 0] + 1) * (bboxes2[:, 3] - bboxes2[:, 1] + 1)
-        ious = overlap / (ap + ag - overlap)
+        ap = (bboxes1[:, 2] - bboxes1[:, 0]) * (bboxes1[:, 3] - bboxes1[:, 1])
+        ag = (bboxes2[:, 2] - bboxes2[:, 0]) * (bboxes2[:, 3] - bboxes2[:, 1])
+        ious = overlap / (ap + ag - overlap + self.eps)
 
-        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1]  # i.e. C in paper
+        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + self.eps    # i.e. C in paper
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
-        return torch.sum(iou_distances)[None] / avg_factor
+        return torch.sum(iou_distances) / avg_factor
         # return torch.sum(iou_distances * weight)[None] / avg_factor
 
 

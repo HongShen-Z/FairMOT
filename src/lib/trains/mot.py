@@ -64,9 +64,6 @@ class MotLoss(torch.nn.Module):
                                             dtype=torch.float32, device=batch['hm'].device)
                     shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
                     base_loc = torch.stack((shift_x, shift_y), dim=0)  # (2, h, w)
-                    print(base_loc.shape)
-                    print(output['wh'].shape)
-                    print(batch['box_target'].shape)
                     # (batch, h, w, 4)
                     pred_boxes = torch.cat((base_loc - output['wh'][:, [0, 1]],
                                             base_loc + output['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
@@ -106,7 +103,6 @@ class MotLoss(torch.nn.Module):
             loss *= 0.5
         else:
             loss = det_loss + 0.1 * id_loss
-
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss, 'id_loss': id_loss}
         return loss, loss_stats
