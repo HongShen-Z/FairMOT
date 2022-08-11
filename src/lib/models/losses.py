@@ -129,7 +129,7 @@ class FocalLoss(nn.Module):
 class GiouLoss(nn.Module):
     def __int__(self):
         super(GiouLoss, self).__int__()
-        self.epsi = 1e-10
+        self.eps = 1e-10
 
     def forward(self, pred, weight, target):
         """
@@ -140,6 +140,7 @@ class GiouLoss(nn.Module):
               ind (batch x max_objects)
               target (batch x max_objects x dim)
         """
+        eps = self.eps
         # TODO: 这里avg_factor用的是权重之和，但按公式应该是样本数量，可以试一试torch.sum(pos_mask).float().item() + 1e-4
         # avg_factor = weight.sum() + 1e-4
         pos_mask = weight > 1e-2
@@ -162,9 +163,9 @@ class GiouLoss(nn.Module):
         overlap = wh[:, 0] * wh[:, 1]
         ap = (bboxes1[:, 2] - bboxes1[:, 0]) * (bboxes1[:, 3] - bboxes1[:, 1])
         ag = (bboxes2[:, 2] - bboxes2[:, 0]) * (bboxes2[:, 3] - bboxes2[:, 1])
-        ious = overlap / (ap + ag - overlap + self.epsi)
+        ious = overlap / (ap + ag - overlap + eps)
 
-        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + self.epsi    # i.e. C in paper
+        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + eps    # i.e. C in paper
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
