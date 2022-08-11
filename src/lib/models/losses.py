@@ -127,9 +127,9 @@ class FocalLoss(nn.Module):
 
 
 class GiouLoss(nn.Module):
-    def __int__(self, ep=1e-10):
+    def __int__(self):
         super(GiouLoss, self).__int__()
-        self.ep = ep
+        self.epsi = 1e-10
 
     def forward(self, pred, weight, target):
         """
@@ -162,9 +162,9 @@ class GiouLoss(nn.Module):
         overlap = wh[:, 0] * wh[:, 1]
         ap = (bboxes1[:, 2] - bboxes1[:, 0]) * (bboxes1[:, 3] - bboxes1[:, 1])
         ag = (bboxes2[:, 2] - bboxes2[:, 0]) * (bboxes2[:, 3] - bboxes2[:, 1])
-        ious = overlap / (ap + ag - overlap + self.ep)
+        ious = overlap / (ap + ag - overlap + self.epsi)
 
-        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + self.ep    # i.e. C in paper
+        enclose_area = enclose_wh[:, 0] * enclose_wh[:, 1] + self.epsi    # i.e. C in paper
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
