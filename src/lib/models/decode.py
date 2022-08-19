@@ -72,10 +72,15 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     clses = clses.view(batch, K, 1).float()
     scores = scores.view(batch, K, 1)
     if ltrb:
-        bboxes = torch.cat([xs - wh[..., 0:1],
-                            ys - wh[..., 1:2],
-                            xs + wh[..., 2:3],
-                            ys + wh[..., 3:4]], dim=2)
+        # bboxes = torch.cat([xs - wh[..., 0:1],
+        #                     ys - wh[..., 1:2],
+        #                     xs + wh[..., 2:3],
+        #                     ys + wh[..., 3:4]], dim=2)
+        # ----------------dev---------------- #
+        bboxes = torch.cat([xs - wh[..., 0:1] / 4,
+                            ys - wh[..., 1:2] / 4,
+                            xs + wh[..., 2:3] / 4,
+                            ys + wh[..., 3:4] / 4], dim=2)
         # box_indx1, box_indy1 = xs - wh[..., 0:1], ys - wh[..., 1:2]
         # box_indx2, box_indy2 = xs + wh[..., 2:3], ys + wh[..., 3:4]
     else:
@@ -99,37 +104,6 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rt) \
     #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lb) \
     #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.2 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_rt) \
-    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_lb) \
-    #              + 0.2 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.8 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.4 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.3 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.9 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.05 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.05 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.98 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.01 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.01 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.99 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.005 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.005 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.1 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.95 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rb)
-    # id_feature = 0.9 * _tranpose_and_gather_feat(id_feature, inds) \
-    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lt) \
-    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rt) \
-    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_lb) \
-    #              + 0.025 * _tranpose_and_gather_feat(id_feature, ind_rb)
     # 方案二：点乘
     # id_feature = 4 * torch.mul(_tranpose_and_gather_feat(id_feature, inds),
     #                        torch.mul(_tranpose_and_gather_feat(id_feature, ind_lt),
