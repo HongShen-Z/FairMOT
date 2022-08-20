@@ -187,8 +187,8 @@ class GiouLoss(nn.Module):
 
         outer_diag = (ox1 - ox2) ** 2 + (oy1 - oy2) ** 2 + eps
 
-        diou_term = iou - inter_diag / outer_diag
-        diou_term = torch.clamp(diou_term, min=-1.0, max=1.0)
+        diou_term = inter_diag / outer_diag
+        diou_term = torch.clamp(diou_term, min=0., max=1.0)
 
         # EIOU term
         c2_w = (ox2 - ox1) ** 2 + eps
@@ -199,8 +199,8 @@ class GiouLoss(nn.Module):
 
         # Focal-EIOU
         eiou = torch.mean((1 - iou + diou_term + eiou_term) * iou_weight)
-        # focal_eiou = iou ** 0.5 * eiou
-        return eiou
+        focal_eiou = iou ** 0.5 * eiou
+        return focal_eiou
 
     # def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
     #     """
