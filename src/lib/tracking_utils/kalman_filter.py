@@ -68,9 +68,6 @@ class KalmanFilter(object):
             to 0 mean.
 
         """
-        for i in range(len(measurement)):
-            if measurement[i] <= 0:
-                measurement[i] = (i+1) * 1e-5
         mean_pos = measurement
         mean_vel = np.zeros_like(mean_pos)
         mean = np.r_[mean_pos, mean_vel]
