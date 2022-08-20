@@ -130,9 +130,9 @@ class GiouLoss(nn.Module):
     def __int__(self):
         super(GiouLoss, self).__int__()
 
-    def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
+    def forward(self, preds, weight, bbox, eps=1e-10, iou_weight=1.):
         """
-        DIOU Loss
+        focal EIOU Loss
         :param preds:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
         :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
         :return: loss
@@ -145,54 +145,119 @@ class GiouLoss(nn.Module):
         print(preds)
         print('-' * 100)
         print(bbox)
-        ix1 = torch.max(preds[:, 0], bbox[:, 0])
-        iy1 = torch.max(preds[:, 1], bbox[:, 1])
-        ix2 = torch.min(preds[:, 2], bbox[:, 2])
-        iy2 = torch.min(preds[:, 3], bbox[:, 3])
 
-        iw = (ix2 - ix1 + 1.0).clamp(min=0.)
-        ih = (iy2 - iy1 + 1.0).clamp(min=0.)
+        x1, y1, x2, y2 = preds[:, 0], preds[:, 1], preds[:, 2], preds[:, 3]
+        x1g, y1g, x2g, y2g = bbox[:, 0], bbox[:, 1], bbox[:, 2], bbox[:, 3]
+        cx = (x1 + x2) / 2
+        cy = (y1 + y2) / 2
+        w = x2 - x1
+        h = y2 - y1
 
-        # overlaps
-        inters = iw * ih
+        cxg = (x1g + x2g) / 2
+        cyg = (y1g + y2g) / 2
+        wg = x2g - x1g
+        hg = y2g - y1g
 
-        # union
-        uni = (preds[:, 2] - preds[:, 0] + 1.0) * (preds[:, 3] - preds[:, 1] + 1.0) + (
-                    bbox[:, 2] - bbox[:, 0] + 1.0) * (
-                      bbox[:, 3] - bbox[:, 1] + 1.0) - inters
+        x2 = torch.maximum(x1, x2)
+        y2 = torch.maximum(y1, y2)
 
-        # iou
-        iou = inters / (uni + eps)
+        # A and B
+        xkis1 = torch.maximum(x1, x1g)
+        ykis1 = torch.maximum(y1, y1g)
+        xkis2 = torch.minimum(x2, x2g)
+        ykis2 = torch.minimum(y2, y2g)
 
-        # inter_diag
-        cxpreds = (preds[:, 2] + preds[:, 0]) / 2
-        cypreds = (preds[:, 3] + preds[:, 1]) / 2
+        # A or B
+        xc1 = torch.minimum(x1, x1g)
+        yc1 = torch.minimum(y1, y1g)
+        xc2 = torch.maximum(x2, x2g)
+        yc2 = torch.maximum(y2, y2g)
 
-        cxbbox = (bbox[:, 2] + bbox[:, 0]) / 2
-        cybbox = (bbox[:, 3] + bbox[:, 1]) / 2
+        intsctk = (xkis2 - xkis1) * (ykis2 - ykis1)
+        intsctk = intsctk * torch.gt(xkis2, xkis1) * torch.gt(ykis2, ykis1)
+        unionk = (x2 - x1) * (y2 - y1) + (x2g - x1g) * (y2g - y1g) - intsctk + eps
+        iouk = intsctk / unionk
 
-        inter_diag = (cxbbox - cxpreds) ** 2 + (cybbox - cypreds) ** 2
+        # DIOU term
+        dist_intersection = (cx - cxg) * (cx - cxg) + (cy - cyg) * (cy - cyg)
+        dist_union = (xc2 - xc1) * (xc2 - xc1) + (yc2 - yc1) * (yc2 - yc1)
+        diou_term = (dist_intersection + eps) / (dist_union + eps)
 
-        # outer_diag
-        ox1 = torch.min(preds[:, 0], bbox[:, 0])
-        oy1 = torch.min(preds[:, 1], bbox[:, 1])
-        ox2 = torch.max(preds[:, 2], bbox[:, 2])
-        oy2 = torch.max(preds[:, 3], bbox[:, 3])
+        # EIOU term
+        c2_w = (xc2 - xc1) * (xc2 - xc1) + eps
+        c2_h = (yc2 - yc1) * (yc2 - yc1) + eps
+        rho2_w = (w - wg) * (w - wg)
+        rho2_h = (h - hg) * (h - hg)
+        eiou_term = (rho2_w / c2_w) + (rho2_h / c2_h)
 
-        outer_diag = (ox1 - ox2) ** 2 + (oy1 - oy2) ** 2
+        # Focal-EIOU
+        eiou = torch.mean((1 - iouk + diou_term + eiou_term) * iou_weight)
+        focal_eiou = iouk ** 0.5 * eiou
+        return focal_eiou
 
-        diou = iou - inter_diag / outer_diag
-        diou = torch.clamp(diou, min=-1.0, max=1.0)
-
-        diou_loss = 1 - diou
-
-        if reduction == 'mean':
-            loss = torch.mean(diou_loss)
-        elif reduction == 'sum':
-            loss = torch.sum(diou_loss)
-        else:
-            raise NotImplementedError
-        return loss
+    # def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
+    #     """
+    #     DIOU Loss
+    #     :param preds:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
+    #     :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
+    #     :return: loss
+    #     """
+    #     pos_mask = weight > 0
+    #     # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
+    #     preds = preds[pos_mask].view(-1, 4)
+    #     bbox = bbox[pos_mask].view(-1, 4)
+    #     print('#' * 100)
+    #     print(preds)
+    #     print('-' * 100)
+    #     print(bbox)
+    #     ix1 = torch.max(preds[:, 0], bbox[:, 0])
+    #     iy1 = torch.max(preds[:, 1], bbox[:, 1])
+    #     ix2 = torch.min(preds[:, 2], bbox[:, 2])
+    #     iy2 = torch.min(preds[:, 3], bbox[:, 3])
+    #
+    #     iw = (ix2 - ix1 + 1.0).clamp(min=0.)
+    #     ih = (iy2 - iy1 + 1.0).clamp(min=0.)
+    #
+    #     # overlaps
+    #     inters = iw * ih
+    #
+    #     # union
+    #     uni = (preds[:, 2] - preds[:, 0] + 1.0) * (preds[:, 3] - preds[:, 1] + 1.0) + (
+    #                 bbox[:, 2] - bbox[:, 0] + 1.0) * (
+    #                   bbox[:, 3] - bbox[:, 1] + 1.0) - inters
+    #
+    #     # iou
+    #     iou = inters / (uni + eps)
+    #
+    #     # inter_diag
+    #     cxpreds = (preds[:, 2] + preds[:, 0]) / 2
+    #     cypreds = (preds[:, 3] + preds[:, 1]) / 2
+    #
+    #     cxbbox = (bbox[:, 2] + bbox[:, 0]) / 2
+    #     cybbox = (bbox[:, 3] + bbox[:, 1]) / 2
+    #
+    #     inter_diag = (cxbbox - cxpreds) ** 2 + (cybbox - cypreds) ** 2
+    #
+    #     # outer_diag
+    #     ox1 = torch.min(preds[:, 0], bbox[:, 0])
+    #     oy1 = torch.min(preds[:, 1], bbox[:, 1])
+    #     ox2 = torch.max(preds[:, 2], bbox[:, 2])
+    #     oy2 = torch.max(preds[:, 3], bbox[:, 3])
+    #
+    #     outer_diag = (ox1 - ox2) ** 2 + (oy1 - oy2) ** 2
+    #
+    #     diou = iou - inter_diag / outer_diag
+    #     diou = torch.clamp(diou, min=-1.0, max=1.0)
+    #
+    #     diou_loss = 1 - diou
+    #
+    #     if reduction == 'mean':
+    #         loss = torch.mean(diou_loss)
+    #     elif reduction == 'sum':
+    #         loss = torch.sum(diou_loss)
+    #     else:
+    #         raise NotImplementedError
+    #     return loss
 
     # def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
     #     """
