@@ -182,6 +182,7 @@ class GiouLoss(nn.Module):
         dist_intersection = (cx - cxg) * (cx - cxg) + (cy - cyg) * (cy - cyg)
         dist_union = (xc2 - xc1) * (xc2 - xc1) + (yc2 - yc1) * (yc2 - yc1)
         diou_term = (dist_intersection + eps) / (dist_union + eps)
+        diou_term = torch.clamp(diou_term, min=-1.0, max=1.0)
 
         # EIOU term
         c2_w = (xc2 - xc1) * (xc2 - xc1) + eps
