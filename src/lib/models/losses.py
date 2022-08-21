@@ -142,9 +142,9 @@ class GiouLoss(nn.Module):
         preds = preds[pos_mask].view(-1, 4)
         bbox = bbox[pos_mask].view(-1, 4)
         print('#' * 100)
-        print(preds)
+        print(preds[-5:])
         print('-' * 100)
-        print(bbox)
+        print(bbox[-5:])
 
         ix1 = torch.max(preds[:, 0], bbox[:, 0])
         iy1 = torch.max(preds[:, 1], bbox[:, 1])
@@ -200,7 +200,7 @@ class GiouLoss(nn.Module):
         # Focal-EIOU
         eiou = torch.mean((1 - iou + diou_term + eiou_term) * iou_weight)
         print(eiou)
-        focal_eiou = iou ** 0.5 * eiou
+        focal_eiou = torch.mean(iou ** 0.5 * eiou)
         print(focal_eiou)
         return eiou
 
