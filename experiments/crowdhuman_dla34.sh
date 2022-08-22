@@ -13,7 +13,7 @@ cd src
 #python train.py mot --exp_id ch_dla34_wh6 --gpus $CUDA_VISIBLE_DEVICES --resume \
 #--batch_size 32 --load_model '../exp/mot/ch_dla34_wh5/models/model_last.pth' --num_epochs 500 \
 #--lr_step '800' --lr 1e-5 --data_cfg '../src/lib/cfg/crowdhuman.json' --dense_wh --wh_weight 5.0
-python train.py mot --exp_id ch_dla34_wh_eiou1 --gpus $CUDA_VISIBLE_DEVICES \
+python train.py mot --exp_id ch_dla34_wh_eiou1 --gpus $CUDA_VISIBLE_DEVICES --resume \
 --batch_size 32 --load_model '../exp/mot/ch_dla34_wh_eiou/models/model_40.pth' --num_epochs 100 \
 --lr_step '800' --lr 1e-4 --data_cfg '../src/lib/cfg/crowdhuman.json' --dense_wh --wh_weight 5.0
 cd ..
