@@ -130,83 +130,9 @@ class GiouLoss(nn.Module):
     def __int__(self):
         super(GiouLoss, self).__int__()
 
-    def forward(self, preds, weight, bbox, eps=1e-10, iou_weight=1.):
-        """
-        focal EIOU Loss
-        :param preds:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
-        :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
-        :return: loss
-        """
-        pos_mask = weight > 0
-        # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
-        preds = preds[pos_mask].view(-1, 4)
-        bbox = bbox[pos_mask].view(-1, 4)
-        print('#' * 100)
-        print(preds[-3:])
-        print('-' * 100)
-        print(bbox[-3:])
-
-        ix1 = torch.max(preds[:, 0], bbox[:, 0])
-        iy1 = torch.max(preds[:, 1], bbox[:, 1])
-        ix2 = torch.min(preds[:, 2], bbox[:, 2])
-        iy2 = torch.min(preds[:, 3], bbox[:, 3])
-
-        iw = (ix2 - ix1 + 1.0).clamp(min=0.)
-        ih = (iy2 - iy1 + 1.0).clamp(min=0.)
-
-        w = preds[:, 2] - preds[:, 0]
-        h = preds[:, 3] - preds[:, 1]
-        wg = bbox[:, 2] - bbox[:, 0]
-        hg = bbox[:, 3] - bbox[:, 1]
-
-        # overlaps
-        inters = iw * ih
-
-        # union
-        uni = (preds[:, 2] - preds[:, 0] + 1.0) * (preds[:, 3] - preds[:, 1] + 1.0) + (
-                    bbox[:, 2] - bbox[:, 0] + 1.0) * (
-                      bbox[:, 3] - bbox[:, 1] + 1.0) - inters
-
-        # iou
-        iou = inters / (uni + eps)
-
-        # inter_diag
-        cxpreds = (preds[:, 2] + preds[:, 0]) / 2
-        cypreds = (preds[:, 3] + preds[:, 1]) / 2
-
-        cxbbox = (bbox[:, 2] + bbox[:, 0]) / 2
-        cybbox = (bbox[:, 3] + bbox[:, 1]) / 2
-
-        inter_diag = (cxbbox - cxpreds) ** 2 + (cybbox - cypreds) ** 2
-
-        # outer_diag
-        ox1 = torch.min(preds[:, 0], bbox[:, 0])
-        oy1 = torch.min(preds[:, 1], bbox[:, 1])
-        ox2 = torch.max(preds[:, 2], bbox[:, 2])
-        oy2 = torch.max(preds[:, 3], bbox[:, 3])
-
-        outer_diag = (ox1 - ox2) ** 2 + (oy1 - oy2) ** 2 + eps
-
-        diou_term = inter_diag / outer_diag
-        diou_term = torch.clamp(diou_term, min=0., max=1.0)
-
-        # EIOU term
-        c2_w = (ox2 - ox1) ** 2 + eps
-        c2_h = (oy2 - oy1) ** 2 + eps
-        rho2_w = (w - wg) ** 2
-        rho2_h = (h - hg) ** 2
-        eiou_term = (rho2_w / c2_w) + (rho2_h / c2_h)
-
-        # Focal-EIOU
-        eiou = torch.mean((1 - iou + diou_term + eiou_term) * iou_weight)
-        # print(eiou)
-        # focal_eiou = torch.mean(iou ** 0.5 * eiou)
-        # print(focal_eiou)
-        return eiou
-
-    # def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
+    # def forward(self, preds, weight, bbox, eps=1e-10, iou_weight=1.):
     #     """
-    #     DIOU Loss
+    #     focal EIOU Loss
     #     :param preds:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
     #     :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
     #     :return: loss
@@ -216,9 +142,10 @@ class GiouLoss(nn.Module):
     #     preds = preds[pos_mask].view(-1, 4)
     #     bbox = bbox[pos_mask].view(-1, 4)
     #     print('#' * 100)
-    #     print(preds)
+    #     print(preds[-3:])
     #     print('-' * 100)
-    #     print(bbox)
+    #     print(bbox[-3:])
+    #
     #     ix1 = torch.max(preds[:, 0], bbox[:, 0])
     #     iy1 = torch.max(preds[:, 1], bbox[:, 1])
     #     ix2 = torch.min(preds[:, 2], bbox[:, 2])
@@ -226,6 +153,11 @@ class GiouLoss(nn.Module):
     #
     #     iw = (ix2 - ix1 + 1.0).clamp(min=0.)
     #     ih = (iy2 - iy1 + 1.0).clamp(min=0.)
+    #
+    #     w = preds[:, 2] - preds[:, 0]
+    #     h = preds[:, 3] - preds[:, 1]
+    #     wg = bbox[:, 2] - bbox[:, 0]
+    #     hg = bbox[:, 3] - bbox[:, 1]
     #
     #     # overlaps
     #     inters = iw * ih
@@ -255,18 +187,86 @@ class GiouLoss(nn.Module):
     #
     #     outer_diag = (ox1 - ox2) ** 2 + (oy1 - oy2) ** 2 + eps
     #
-    #     diou = iou - inter_diag / outer_diag
-    #     diou = torch.clamp(diou, min=-1.0, max=1.0)
+    #     diou_term = inter_diag / outer_diag
+    #     diou_term = torch.clamp(diou_term, min=0., max=1.0)
     #
-    #     diou_loss = 1 - diou
+    #     # EIOU term
+    #     c2_w = (ox2 - ox1) ** 2 + eps
+    #     c2_h = (oy2 - oy1) ** 2 + eps
+    #     rho2_w = (w - wg) ** 2
+    #     rho2_h = (h - hg) ** 2
+    #     eiou_term = (rho2_w / c2_w) + (rho2_h / c2_h)
     #
-    #     if reduction == 'mean':
-    #         loss = torch.mean(diou_loss)
-    #     elif reduction == 'sum':
-    #         loss = torch.sum(diou_loss)
-    #     else:
-    #         raise NotImplementedError
-    #     return loss
+    #     # Focal-EIOU
+    #     eiou = torch.mean((1 - iou + diou_term + eiou_term) * iou_weight)
+    #     # print(eiou)
+    #     # focal_eiou = torch.mean(iou ** 0.5 * eiou)
+    #     # print(focal_eiou)
+    #     return eiou
+
+    def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
+        """
+        DIOU Loss
+        :param preds:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
+        :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
+        :return: loss
+        """
+        pos_mask = weight > 0
+        # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
+        preds = preds[pos_mask].view(-1, 4)
+        bbox = bbox[pos_mask].view(-1, 4)
+        print('#' * 100)
+        print(preds)
+        print('-' * 100)
+        print(bbox)
+        ix1 = torch.max(preds[:, 0], bbox[:, 0])
+        iy1 = torch.max(preds[:, 1], bbox[:, 1])
+        ix2 = torch.min(preds[:, 2], bbox[:, 2])
+        iy2 = torch.min(preds[:, 3], bbox[:, 3])
+
+        iw = (ix2 - ix1 + 1.0).clamp(min=0.)
+        ih = (iy2 - iy1 + 1.0).clamp(min=0.)
+
+        # overlaps
+        inters = iw * ih
+
+        # union
+        uni = (preds[:, 2] - preds[:, 0] + 1.0) * (preds[:, 3] - preds[:, 1] + 1.0) + (
+                    bbox[:, 2] - bbox[:, 0] + 1.0) * (
+                      bbox[:, 3] - bbox[:, 1] + 1.0) - inters
+
+        # iou
+        iou = inters / (uni + eps)
+
+        # inter_diag
+        cxpreds = (preds[:, 2] + preds[:, 0]) / 2
+        cypreds = (preds[:, 3] + preds[:, 1]) / 2
+
+        cxbbox = (bbox[:, 2] + bbox[:, 0]) / 2
+        cybbox = (bbox[:, 3] + bbox[:, 1]) / 2
+
+        inter_diag = (cxbbox - cxpreds) ** 2 + (cybbox - cypreds) ** 2
+
+        # outer_diag
+        ox1 = torch.min(preds[:, 0], bbox[:, 0])
+        oy1 = torch.min(preds[:, 1], bbox[:, 1])
+        ox2 = torch.max(preds[:, 2], bbox[:, 2])
+        oy2 = torch.max(preds[:, 3], bbox[:, 3])
+
+        outer_diag = (ox1 - ox2) ** 2 + (oy1 - oy2) ** 2 + eps
+
+        diou = iou - inter_diag / outer_diag
+        diou = torch.clamp(diou, min=-1.0, max=1.0)
+
+        diou_loss = 1 - diou
+
+        if reduction == 'mean':
+            loss = torch.mean(diou_loss)
+        elif reduction == 'sum':
+            loss = torch.sum(diou_loss)
+        else:
+            raise NotImplementedError
+        return loss
 
     # def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
     #     """
