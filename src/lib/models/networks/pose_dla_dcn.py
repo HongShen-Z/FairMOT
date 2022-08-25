@@ -399,13 +399,12 @@ class DLAUp(nn.Module):
         for i in range(len(channels) - 1):
             j = -i - 2
             setattr(self, 'ida_{}'.format(i),
-                    IDAUp(channels[j], in_channels[j:],
-                          scales[j:] // scales[j]))
+                    IDAUp(channels[j], in_channels[j:], scales[j:] // scales[j]))
             scales[j + 1:] = scales[j]
             in_channels[j + 1:] = [channels[j] for _ in channels[j + 1:]]
 
     def forward(self, layers):
-        out = [layers[-1]]  # start with 32
+        out = [layers[-1]]  # start with 1/32
         for i in range(len(layers) - self.startp - 1):
             ida = getattr(self, 'ida_{}'.format(i))
             ida(layers, len(layers) - i - 2, len(layers))
