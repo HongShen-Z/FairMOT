@@ -138,7 +138,6 @@ class GiouLoss(nn.Module):
         :return: loss
         """
         pos_mask = weight > 1e-2
-        num = float(pos_mask.sum())
         # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         preds = preds[pos_mask].view(-1, 4)
         bbox = bbox[pos_mask].view(-1, 4)
