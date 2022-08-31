@@ -137,7 +137,7 @@ class GiouLoss(nn.Module):
         :param bbox:[[x1,y1,x2,y2], [x1,y1,x2,y2],,,]
         :return: loss
         """
-        pos_mask = weight > 1e-2
+        pos_mask = weight > 0
         # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         preds = preds[pos_mask].view(-1, 4)
         bbox = bbox[pos_mask].view(-1, 4)
