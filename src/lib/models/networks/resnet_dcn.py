@@ -17,6 +17,7 @@ import torch
 import torch.nn as nn
 from dcn_v2 import DCN
 import torch.utils.model_zoo as model_zoo
+import torch.nn.functional as F
 
 BN_MOMENTUM = 0.1
 logger = logging.getLogger(__name__)
@@ -260,6 +261,9 @@ class PoseResNet(nn.Module):
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)
+            # --------------------dev-------------------- #
+            if 'wh' in head:
+                ret[head] = F.relu(ret[head]) * 16.
         return [ret]
 
     def init_weights(self, num_layers):
