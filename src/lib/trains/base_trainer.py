@@ -76,7 +76,7 @@ class BaseTrainer(object):
             loss = loss.mean()
             if phase == 'train':
                 # 2. add set_to_none=True
-                self.optimizer.zero_grad(set_to_none=True)
+                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
             batch_time.update(time.time() - end)
