@@ -41,7 +41,15 @@ def main(opt):
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
-    optimizer = torch.optim.Adam(model.parameters(), opt.lr)
+
+    # -----------------dev----------------- #
+    model_params = []
+    for m in model:
+        model_params += model[m].parameters()
+    optimizer = torch.optim.Adam(model_params, opt.lr)
+    # -----------------dev----------------- #
+
+    # optimizer = torch.optim.Adam(model.parameters(), opt.lr)
     # optimizer = torch.optim.SGD(model.parameters(), opt.lr, momentum=0.9, weight_decay=0.0004)
     start_epoch = 0
 
