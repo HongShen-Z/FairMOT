@@ -28,8 +28,9 @@ class ModleWithLoss(torch.nn.Module):
 
         self.optimizer.zero_grad()
         # First compute representations (z)
-        images_volatile = Variable(images.data, volatile=True)
-        rep = self.model['rep'](images_volatile)
+        with torch.no_grad():
+            images_volatile = Variable(images.data)
+            rep = self.model['rep'](images_volatile)
         # As an approximate solution we only need gradients for input
         if isinstance(rep, list):
             # This is a hack to handle psp-net
