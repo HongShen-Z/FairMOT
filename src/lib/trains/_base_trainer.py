@@ -23,7 +23,7 @@ class ModleWithLoss(torch.nn.Module):
         grads = {}
         scale = {}
         tasks = ['D', 'R']
-        images = batch[0]
+        images = batch['input']
         images = Variable(images.cuda())
 
         self.optimizer.zero_grad()
