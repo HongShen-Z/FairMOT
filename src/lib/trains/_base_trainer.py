@@ -40,9 +40,11 @@ class ModleWithLoss(torch.nn.Module):
             rep = rep[0]
             rep_variable = [Variable(rep.data.clone(), requires_grad=True)]
             list_rep = True
+            print('*' * 100)
         else:
             rep_variable = Variable(rep.data.clone(), requires_grad=True)
             list_rep = False
+            print('-' * 100)
 
         # Compute gradients of each loss function wrt z
         for t in tasks:
