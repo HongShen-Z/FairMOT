@@ -68,7 +68,7 @@ def load_model(model, model_path, optimizer=None, resume=False,
         if not (k in state_dict):
             print('No param {}.'.format(k) + msg)
             state_dict[k] = model_state_dict[k]
-    model.load_state_dict(state_dict, strict=False)
+    model['rep'].load_state_dict(state_dict, strict=False)
 
     # resume optimizer parameters
     if optimizer is not None and resume:
