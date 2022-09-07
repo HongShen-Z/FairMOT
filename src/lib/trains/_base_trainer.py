@@ -53,6 +53,7 @@ class ModleWithLoss(torch.nn.Module):
             loss, _ = self.loss[t](out_t, batch)
             loss_data[t] = loss.item()
             if phase == 'train':
+                torch.backends.cudnn.benchmark = False
                 loss.backward()
             grads[t] = []
             if list_rep:
