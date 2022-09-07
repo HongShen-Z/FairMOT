@@ -521,93 +521,16 @@ class DLASeg(nn.Module):
 
 
 class DLABackbone(nn.Module):
-    def __init__(self, base_name, pretrained, down_ratio):
+    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
+                 last_level, head_conv, out_channel=0):
         super(DLABackbone, self).__init__()
         assert down_ratio in [2, 4, 8, 16]
         self.first_level = int(np.log2(down_ratio))
+        self.last_level = last_level
         self.base = globals()[base_name](pretrained=pretrained)
         channels = self.base.channels
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]  # [1, 2, 4, 8]
         self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
-
-    def forward(self, x):
-        x = self.base(x)
-        x = self.dla_up(x)
-        # x[0] (1,64,152,272)
-        # x[1] (1,128,76,136)
-        # x[2] (1,256,38,68)
-        # x[3] (1,512,19,34)
-        return x
-
-
-class DLADecoderD(nn.Module):
-    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, head_conv, out_channel=0):
-        super(DLADecoderD, self).__init__()
-        assert down_ratio in [2, 4, 8, 16]
-        self.first_level = int(np.log2(down_ratio))
-        self.last_level = last_level
-        self.base = globals()[base_name](pretrained=pretrained)
-        channels = self.base.channels
-
-        if out_channel == 0:
-            out_channel = channels[self.first_level]
-
-        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-                            [2 ** i for i in range(self.last_level - self.first_level)])
-
-        self.heads = heads
-        self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
-        for head in self.heads:
-            classes = self.heads[head]
-            if head_conv > 0:
-                fc = nn.Sequential(
-                    nn.Conv2d(channels[self.first_level], head_conv,
-                              kernel_size=3, padding=1, bias=True),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(head_conv, classes,
-                              kernel_size=final_kernel, stride=1,
-                              padding=final_kernel // 2, bias=True))
-                if 'hm' in head:
-                    fc[-1].bias.data.fill_(-2.19)
-                else:
-                    fill_fc_weights(fc)
-            else:
-                fc = nn.Conv2d(channels[self.first_level], classes,
-                               kernel_size=final_kernel, stride=1,
-                               padding=final_kernel // 2, bias=True)
-                if 'hm' in head:
-                    fc.bias.data.fill_(-2.19)
-                else:
-                    fill_fc_weights(fc)
-            self.__setattr__(head, fc)
-
-    def forward(self, x):
-        # x[0] (1,64,152,272)
-        # x[1] (1,128,76,136)
-        # x[2] (1,256,38,68)
-        # x[3] (1,512,19,34)
-        D = []
-        for i in range(self.last_level - self.first_level):
-            D.append(x[i].clone())
-        self.ida_up(D, 0, len(D))
-
-        z = {}
-        for head in self.det_heads:
-            z[head] = self.__getattr__(head)(D[-1])
-
-        return z
-
-
-class DLADecoderR(nn.Module):
-    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, head_conv, out_channel=0):
-        super(DLADecoderR, self).__init__()
-        assert down_ratio in [2, 4, 8, 16]
-        self.first_level = int(np.log2(down_ratio))
-        self.last_level = last_level
-        self.base = globals()[base_name](pretrained=pretrained)
-        channels = self.base.channels
 
         if out_channel == 0:
             out_channel = channels[self.first_level]
@@ -620,6 +543,7 @@ class DLADecoderR(nn.Module):
         self.SA_1 = ReidUp(channels[-3], channels[-4], 2)
 
         self.heads = heads
+        self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
         self.reid_heads = dict([(key, heads[key]) for key in ['id']])
         for head in self.heads:
             classes = self.heads[head]
@@ -646,38 +570,119 @@ class DLADecoderR(nn.Module):
             self.__setattr__(head, fc)
 
     def forward(self, x):
+        x = self.base(x)
+        x = self.dla_up(x)
         # x[0] (1,64,152,272)
         # x[1] (1,128,76,136)
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        D = []
+        y = []
         for i in range(self.last_level - self.first_level):
-            D.append(x[i].clone())
-        self.ida_up(D, 0, len(D))
+            y.append(x[i].clone())
+        self.ida_up(y, 0, len(y))
 
-        z = {}
+        return y[-1]
+
+
+class DLADecoderD(nn.Module):
+    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel, head_conv):
+        super(DLADecoderD, self).__init__()
+        assert down_ratio in [2, 4, 8, 16]
+        self.first_level = int(np.log2(down_ratio))
+        self.base = globals()[base_name](pretrained=pretrained)
+        channels = self.base.channels
+
+        self.heads = heads
+        self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
+        for head in self.det_heads:
+            classes = self.det_heads[head]
+            if head_conv > 0:
+                fc = nn.Sequential(
+                    nn.Conv2d(channels[self.first_level], head_conv,
+                              kernel_size=3, padding=1, bias=True),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(head_conv, classes,
+                              kernel_size=final_kernel, stride=1,
+                              padding=final_kernel // 2, bias=True))
+                if 'hm' in head:
+                    fc[-1].bias.data.fill_(-2.19)
+                else:
+                    fill_fc_weights(fc)
+            else:
+                fc = nn.Conv2d(channels[self.first_level], classes,
+                               kernel_size=final_kernel, stride=1,
+                               padding=final_kernel // 2, bias=True)
+                if 'hm' in head:
+                    fc.bias.data.fill_(-2.19)
+                else:
+                    fill_fc_weights(fc)
+            self.__setattr__(head, fc)
+
+    def forward(self, x):
+
+        D = {}
+        for head in self.det_heads:
+            D[head] = self.__getattr__(head)(x)
+
+        return D
+
+
+class DLADecoderR(nn.Module):
+    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel, head_conv):
+        super(DLADecoderR, self).__init__()
+        assert down_ratio in [2, 4, 8, 16]
+        self.first_level = int(np.log2(down_ratio))
+        self.base = globals()[base_name](pretrained=pretrained)
+        channels = self.base.channels
+
+        self.heads = heads
+        self.reid_heads = dict([(key, heads[key]) for key in ['id']])
         for head in self.reid_heads:
-            z[head] = self.__getattr__(head)(D[-1])
+            classes = self.reid_heads[head]
+            if head_conv > 0:
+                fc = nn.Sequential(
+                    nn.Conv2d(channels[self.first_level], head_conv,
+                              kernel_size=3, padding=1, bias=True),
+                    nn.ReLU(inplace=True),
+                    nn.Conv2d(head_conv, classes,
+                              kernel_size=final_kernel, stride=1,
+                              padding=final_kernel // 2, bias=True))
 
-        return z
+                fill_fc_weights(fc)
+            else:
+                fc = nn.Conv2d(channels[self.first_level], classes,
+                               kernel_size=final_kernel, stride=1,
+                               padding=final_kernel // 2, bias=True)
+
+                fill_fc_weights(fc)
+            self.__setattr__(head, fc)
+
+    def forward(self, x):
+
+        R = {}
+        for head in self.reid_heads:
+            R[head] = self.__getattr__(head)(x)
+
+        return R
 
 
 def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
-    model = {'rep': DLABackbone('dla{}'.format(num_layers),
+    model = {'rep': DLABackbone('dla{}'.format(num_layers), heads,
                                 pretrained=False,
-                                down_ratio=down_ratio),
+                                down_ratio=down_ratio,
+                                final_kernel=1,
+                                last_level=5,
+                                head_conv=head_conv),
              'D': DLADecoderD('dla{}'.format(num_layers), heads,
                               pretrained=False,
                               down_ratio=down_ratio,
                               final_kernel=1,
-                              last_level=5,
                               head_conv=head_conv),
              'R': DLADecoderR('dla{}'.format(num_layers), heads,
                               pretrained=False,
                               down_ratio=down_ratio,
                               final_kernel=1,
-                              last_level=5,
                               head_conv=head_conv)}
 
     return model
