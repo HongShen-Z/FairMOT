@@ -49,7 +49,7 @@ class ModleWithLoss(torch.nn.Module):
             self.optimizer.zero_grad()
             out_t = self.model[t](rep_variable)
             loss, _ = self.loss[t](out_t, batch)
-            loss_data[t] = loss.data[0]
+            loss_data[t] = loss.item()
             if phase == 'train':
                 loss.backward()
             grads[t] = []
