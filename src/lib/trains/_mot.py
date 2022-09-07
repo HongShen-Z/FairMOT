@@ -108,9 +108,31 @@ class MotLoss(torch.nn.Module):
         return loss, loss_stats
 
 
-class DetLoss(MotLoss):
+class DetLoss(torch.nn.Module):
     def __init__(self, opt):
-        super(DetLoss, self).__init__(opt)
+        super(DetLoss, self).__init__()
+        self.crit = torch.nn.MSELoss() if opt.mse_loss == 'mse' else \
+            FocalLoss() if opt.mse_loss == 'focal' else VarifocalLoss()
+        self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
+            RegLoss() if opt.reg_loss == 'sl1' else None
+        # self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
+        #     NormRegL1Loss() if opt.norm_wh else \
+        #     RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
+        self.crit_wh = GiouLoss() if opt.dense_wh else self.crit_reg
+        self.opt = opt
+        self.emb_dim = opt.reid_dim
+        self.nID = opt.nID
+        self.classifier = nn.Linear(self.emb_dim, self.nID)
+        if opt.id_loss == 'focal':
+            torch.nn.init.normal_(self.classifier.weight, std=0.01)
+            prior_prob = 0.01
+            bias_value = -math.log((1 - prior_prob) / prior_prob)
+            torch.nn.init.constant_(self.classifier.bias, bias_value)
+        self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
+        self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
+        self.s_det = nn.Parameter(-1.85 * torch.ones(1))
+        self.s_id = nn.Parameter(-1.05 * torch.ones(1))
+
     def forward(self, outputs, batch):
         opt = self.opt
         hm_loss, wh_loss, off_loss= 0, 0, 0
@@ -148,9 +170,31 @@ class DetLoss(MotLoss):
         return det_loss, loss_stats
 
 
-class ReidLoss(MotLoss):
+class ReidLoss(torch.nn.Module):
     def __init__(self, opt):
-        super(ReidLoss, self).__init__(opt)
+        super(ReidLoss, self).__init__()
+        self.crit = torch.nn.MSELoss() if opt.mse_loss == 'mse' else \
+            FocalLoss() if opt.mse_loss == 'focal' else VarifocalLoss()
+        self.crit_reg = RegL1Loss() if opt.reg_loss == 'l1' else \
+            RegLoss() if opt.reg_loss == 'sl1' else None
+        # self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
+        #     NormRegL1Loss() if opt.norm_wh else \
+        #     RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
+        self.crit_wh = GiouLoss() if opt.dense_wh else self.crit_reg
+        self.opt = opt
+        self.emb_dim = opt.reid_dim
+        self.nID = opt.nID
+        self.classifier = nn.Linear(self.emb_dim, self.nID)
+        if opt.id_loss == 'focal':
+            torch.nn.init.normal_(self.classifier.weight, std=0.01)
+            prior_prob = 0.01
+            bias_value = -math.log((1 - prior_prob) / prior_prob)
+            torch.nn.init.constant_(self.classifier.bias, bias_value)
+        self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
+        self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
+        self.s_det = nn.Parameter(-1.85 * torch.ones(1))
+        self.s_id = nn.Parameter(-1.05 * torch.ones(1))
+
     def forward(self, outputs, batch):
         opt = self.opt
         id_loss = 0
