@@ -90,13 +90,22 @@ def load_model(model, model_path, optimizer=None, resume=False,
         return model
 
 
-def save_model(path, epoch, model, optimizer=None):
+def save_model(path, epoch, model, optimizer=None, tasks=None):
+    data = {'epoch': epoch}
+    if tasks is None:
+        tasks = ['D', 'R']
     if isinstance(model, torch.nn.DataParallel):
-        state_dict = model.module.state_dict()
+        print('$' * 100)
+        state_rep = model['rep'].module.state_dict()
+        for t in tasks:
+            key = 'state_{}'.format(t)
+            data[key] = model[t].module.state_dict()
     else:
-        state_dict = model.state_dict()
-    data = {'epoch': epoch,
-            'state_dict': state_dict}
+        state_rep = model['rep'].state_dict()
+        for t in tasks:
+            key = 'state_{}'.format(t)
+            data[key] = model[t].state_dict()
+    data['state_rep'] = state_rep
     if not (optimizer is None):
         data['optimizer'] = optimizer.state_dict()
     torch.save(data, path)

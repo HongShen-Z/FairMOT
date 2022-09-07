@@ -24,11 +24,10 @@ def main(opt):
 
     print('Setting up data...')
     Dataset = get_dataset(opt.dataset, opt.task)
-    f = open(opt.data_cfg)
-    data_config = json.load(f)
-    trainset_paths = data_config['train']
-    dataset_root = data_config['root']
-    f.close()
+    with open(opt.data_cfg) as f:
+        data_config = json.load(f)
+        trainset_paths = data_config['train']
+        dataset_root = data_config['root']
     transforms = T.Compose([T.ToTensor()])
     dataset = Dataset(opt, dataset_root, trainset_paths, img_size=(1088, 608), augment=True, transforms=transforms)
     opt = opts().update_dataset_info_and_set_heads(opt, dataset)
@@ -83,21 +82,21 @@ def main(opt):
 
         if opt.val_intervals > 0 and epoch % opt.val_intervals == 0:
             save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(mark)),
-                       epoch, model, optimizer)
+                       epoch, model, optimizer, opt.tasks)
         else:
             save_model(os.path.join(opt.save_dir, 'models', 'model_last.pth'),
-                       epoch, model, optimizer)
+                       epoch, model, optimizer, opt.tasks)
         logger.write('\n')
         if epoch in opt.lr_step:
             save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
-                       epoch, model, optimizer)
+                       epoch, model, optimizer, opt.tasks)
             lr = opt.lr * (0.1 ** (opt.lr_step.index(epoch) + 1))
             print('Drop LR to', lr)
             for param_group in optimizer.param_groups:
                 param_group['lr'] = lr
         if epoch % 5 == 0 or epoch >= opt.num_epochs - 5:
             save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
-                       epoch, model, optimizer)
+                       epoch, model, optimizer, opt.tasks)
     logger.close()
 
 

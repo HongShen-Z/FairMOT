@@ -12,8 +12,9 @@ from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
 
 
 class ModleWithLoss(torch.nn.Module):
-    def __init__(self, model, loss_fn, optimizer):
+    def __init__(self, model, loss_fn, optimizer, tasks):
         super(ModleWithLoss, self).__init__()
+        self.tasks = tasks
         self.loss_D = loss_fn['D']
         self.loss_R = loss_fn['R']
         self.loss = {'D': self.loss_D, 'R': self.loss_R}
@@ -25,7 +26,6 @@ class ModleWithLoss(torch.nn.Module):
 
     def forward(self, batch, phase='train'):
         loss_data = {}
-        tasks = ['D', 'R']
         grads = {}
         scale = {}
         images = batch['input']
@@ -47,7 +47,7 @@ class ModleWithLoss(torch.nn.Module):
             list_rep = False
 
         # Compute gradients of each loss function wrt z
-        for t in tasks:
+        for t in self.tasks:
             self.optimizer.zero_grad()
             out_t = self.model[t](rep_variable)
             loss, _ = self.loss[t](out_t, batch)
@@ -64,13 +64,13 @@ class ModleWithLoss(torch.nn.Module):
 
         # Normalize all gradients, this is optional and not included in the paper.
         gn = gradient_normalizers(grads, loss_data, 'loss+')
-        for t in tasks:
+        for t in self.tasks:
             for gr_i in range(len(grads[t])):
                 grads[t][gr_i] = grads[t][gr_i] / gn[t]
 
         # Frank-Wolfe iteration to compute scales.
-        sol, min_norm = MinNormSolver.find_min_norm_element([grads[t] for t in tasks])
-        for i, t in enumerate(tasks):
+        sol, min_norm = MinNormSolver.find_min_norm_element([grads[t] for t in self.tasks])
+        for i, t in enumerate(self.tasks):
             scale[t] = float(sol[i])
 
         # Scaled back-propagation
@@ -78,7 +78,7 @@ class ModleWithLoss(torch.nn.Module):
         rep = self.model['rep'](images)
         outputs = {}
         loss_stats = {}
-        for i, t in enumerate(tasks):
+        for i, t in enumerate(self.tasks):
             out_t = self.model[t](rep)
             loss_t, loss_stat = self.loss[t](out_t, batch)
             outputs.update(out_t)
@@ -104,7 +104,7 @@ class BaseTrainer(object):
         self.opt = opt
         self.optimizer = optimizer
         self.loss_stats, self.loss = self._get_losses(opt)
-        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer)
+        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer, opt.tasks)
         loss_params = []
         for m in self.loss:
             loss_params += self.loss[m].parameters()

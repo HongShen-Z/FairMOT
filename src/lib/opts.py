@@ -127,6 +127,7 @@ class opts(object):
         else:
             opt = self.parser.parse_args(args)
 
+        opt.tasks = ['D', 'R']
         opt.gpus_str = opt.gpus
         opt.gpus = [int(gpu) for gpu in opt.gpus.split(',')]
         opt.lr_step = [int(i) for i in opt.lr_step.split(',')]
