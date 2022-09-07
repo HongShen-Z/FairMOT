@@ -8,7 +8,7 @@ from progress.bar import Bar
 from models.data_parallel import DataParallel
 from utils.utils import AverageMeter
 from torch.autograd import Variable
-from min_norm_solvers import MinNormSolver, gradient_normalizers
+from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
 
 
 class ModleWithLoss(torch.nn.Module):
