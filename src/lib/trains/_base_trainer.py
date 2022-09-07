@@ -99,7 +99,7 @@ class BaseTrainer(object):
         self.opt = opt
         self.optimizer = optimizer
         self.loss_stats, self.loss = self._get_losses(opt)
-        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer)
+        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer, phase='train')
         loss_params = []
         for m in self.loss:
             loss_params += self.loss[m].parameters()
