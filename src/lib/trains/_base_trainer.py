@@ -16,9 +16,10 @@ class ModleWithLoss(torch.nn.Module):
         super(ModleWithLoss, self).__init__()
         self.loss = loss_fn
         self.optimizer = optimizer
-        self.model = {}
-        for k, v in model.items():
-            self.model[k] = model[k]
+        self.model_rep = model['rep']
+        self.model_D = model['D']
+        self.model_R = model['R']
+        self.model = {'rep': self.model_rep, 'D': self.model_D, 'R': self.model_R}
 
     def forward(self, batch, phase='train'):
         loss_data = {}
