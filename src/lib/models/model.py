@@ -48,7 +48,7 @@ def load_model(model, model_path, optimizer=None, resume=False,
             state_dict[k[7:]] = state_dict_[k]
         else:
             state_dict[k] = state_dict_[k]
-    model_state_dict = model.state_dict()
+    model_state_dict = model['rep'].state_dict()
 
     # check loaded parameters and created model parameters
     msg = 'If you see this, your model does not fully load the ' + \

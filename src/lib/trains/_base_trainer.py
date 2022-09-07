@@ -100,8 +100,10 @@ class BaseTrainer(object):
         self.optimizer = optimizer
         self.loss_stats, self.loss = self._get_losses(opt)
         self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer)
-        for t in self.loss:
-            self.optimizer.add_param_group({'params': self.loss[t].parameters()})
+        loss_params = []
+        for m in self.loss:
+            loss_params += self.loss[m].parameters()
+        self.optimizer.add_param_group({'params': loss_params})
 
     def set_device(self, gpus, chunk_sizes, device):
         if len(gpus) > 1:
