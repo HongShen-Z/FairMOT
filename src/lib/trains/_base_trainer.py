@@ -14,7 +14,9 @@ from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
 class ModleWithLoss(torch.nn.Module):
     def __init__(self, model, loss_fn, optimizer):
         super(ModleWithLoss, self).__init__()
-        self.loss = loss_fn
+        self.loss_D = loss_fn['D']
+        self.loss_R = loss_fn['R']
+        self.loss = {'D': self.loss_D, 'R': self.loss_R}
         self.optimizer = optimizer
         self.model_rep = model['rep']
         self.model_D = model['D']
