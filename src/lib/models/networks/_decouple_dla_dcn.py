@@ -521,8 +521,7 @@ class DLASeg(nn.Module):
 
 
 class DLABackbone(nn.Module):
-    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, head_conv, out_channel=0):
+    def __init__(self, base_name, pretrained, down_ratio, last_level, out_channel=0):
         super(DLABackbone, self).__init__()
         assert down_ratio in [2, 4, 8, 16]
         self.first_level = int(np.log2(down_ratio))
@@ -541,33 +540,6 @@ class DLABackbone(nn.Module):
         self.SA_3 = ReidUp(channels[-1], channels[-2], 2)
         self.SA_2 = ReidUp(channels[-2], channels[-3], 2)
         self.SA_1 = ReidUp(channels[-3], channels[-4], 2)
-
-        self.heads = heads
-        self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
-        self.reid_heads = dict([(key, heads[key]) for key in ['id']])
-        for head in self.heads:
-            classes = self.heads[head]
-            if head_conv > 0:
-                fc = nn.Sequential(
-                    nn.Conv2d(channels[self.first_level], head_conv,
-                              kernel_size=3, padding=1, bias=True),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(head_conv, classes,
-                              kernel_size=final_kernel, stride=1,
-                              padding=final_kernel // 2, bias=True))
-                if 'hm' in head:
-                    fc[-1].bias.data.fill_(-2.19)
-                else:
-                    fill_fc_weights(fc)
-            else:
-                fc = nn.Conv2d(channels[self.first_level], classes,
-                               kernel_size=final_kernel, stride=1,
-                               padding=final_kernel // 2, bias=True)
-                if 'hm' in head:
-                    fc.bias.data.fill_(-2.19)
-                else:
-                    fill_fc_weights(fc)
-            self.__setattr__(head, fc)
 
     def forward(self, x):
         x = self.base(x)
@@ -668,12 +640,10 @@ class DLADecoderR(nn.Module):
 
 
 def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
-    model = {'rep': DLABackbone('dla{}'.format(num_layers), heads,
+    model = {'rep': DLABackbone('dla{}'.format(num_layers),
                                 pretrained=False,
                                 down_ratio=down_ratio,
-                                final_kernel=1,
-                                last_level=5,
-                                head_conv=head_conv),
+                                last_level=5),
              'D': DLADecoderD('dla{}'.format(num_layers), heads,
                               pretrained=False,
                               down_ratio=down_ratio,

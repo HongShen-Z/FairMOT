@@ -83,7 +83,7 @@ class ModleWithLoss(torch.nn.Module):
             loss_t, loss_stat = self.loss[t](out_t, batch)
             outputs.update(out_t)
             loss_stats.update(loss_stat)
-            loss_data[t] = loss_t.data[0]
+            loss_data[t] = loss_t.items()
             if i > 0:
                 loss = loss + scale[t] * loss_t
             else:
