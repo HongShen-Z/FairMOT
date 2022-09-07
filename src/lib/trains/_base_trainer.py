@@ -12,14 +12,13 @@ from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
 
 
 class ModleWithLoss(torch.nn.Module):
-    def __init__(self, model, loss_fn, optimizer, phase='train'):
+    def __init__(self, model, loss_fn, optimizer):
         super(ModleWithLoss, self).__init__()
         self.model = model
         self.loss = loss_fn
         self.optimizer = optimizer
-        self.phase = phase
 
-    def forward(self, batch):
+    def forward(self, batch, phase='train'):
         loss_data = {}
         grads = {}
         scale = {}
@@ -47,7 +46,7 @@ class ModleWithLoss(torch.nn.Module):
             out_t = self.model[t](rep_variable)
             loss, _ = self.loss[t](out_t, batch)
             loss_data[t] = loss.data[0]
-            if self.phase == 'train':
+            if phase == 'train':
                 loss.backward()
             grads[t] = []
             if list_rep:
@@ -84,7 +83,7 @@ class ModleWithLoss(torch.nn.Module):
             else:
                 loss = scale[t] * loss_t
         loss_stats.update({'loss': loss})
-        if self.phase == 'train':
+        if phase == 'train':
             loss.backward()
             self.optimizer.step()
 
@@ -99,7 +98,7 @@ class BaseTrainer(object):
         self.opt = opt
         self.optimizer = optimizer
         self.loss_stats, self.loss = self._get_losses(opt)
-        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer, phase='train')
+        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer)
         loss_params = []
         for m in self.loss:
             loss_params += self.loss[m].parameters()
@@ -120,7 +119,7 @@ class BaseTrainer(object):
                     state[k] = v.to(device=device, non_blocking=True)
 
     def run_epoch(self, phase, epoch, data_loader):
-        model_with_loss = self.model_with_loss(phase=phase)
+        model_with_loss = self.model_with_loss
         if phase == 'train':
             model_with_loss.train()
         else:
@@ -145,7 +144,7 @@ class BaseTrainer(object):
                 if k != 'meta':
                     batch[k] = batch[k].to(device=opt.device, non_blocking=True)
 
-            output, loss, loss_stats = model_with_loss(batch)
+            output, loss, loss_stats = model_with_loss(batch, phase=phase)
             # loss = loss.mean()
             # if phase == 'train':
             #     # 2. add set_to_none=True
