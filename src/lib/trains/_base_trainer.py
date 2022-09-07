@@ -23,13 +23,16 @@ class ModleWithLoss(torch.nn.Module):
         self.model_D = model['D']
         self.model_R = model['R']
         self.model = {'rep': self.model_rep, 'D': self.model_D, 'R': self.model_R}
+        self.loss_data = {}
+        self.grads = {}
+        self.scale = {}
 
     def forward(self, batch, phase='train'):
-        loss_data = {}
-        grads = {}
-        scale = {}
+        loss_data = self.loss_data
+        grads = self.grads
+        scale = self.scale
         images = batch['input']
-        images = Variable(images.cuda(0))
+        images = Variable(images.cuda())
 
         self.optimizer.zero_grad()
         # First compute representations (z)
