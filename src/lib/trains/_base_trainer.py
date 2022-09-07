@@ -14,15 +14,17 @@ from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
 class ModleWithLoss(torch.nn.Module):
     def __init__(self, model, loss_fn, optimizer):
         super(ModleWithLoss, self).__init__()
-        self.model = model
         self.loss = loss_fn
         self.optimizer = optimizer
+        self.model = {}
+        for k, v in model.items():
+            self.model[k] = model[k]
 
     def forward(self, batch, phase='train'):
         loss_data = {}
+        tasks = ['D', 'R']
         grads = {}
         scale = {}
-        tasks = ['D', 'R']
         images = batch['input']
         images = Variable(images.cuda())
 
