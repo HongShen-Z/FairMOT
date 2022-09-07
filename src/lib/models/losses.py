@@ -53,7 +53,7 @@ def _neg_loss(pred, gt):
 
     loss = 0
 
-    print(pred.is_cuda, pos_inds.is_cuda)
+    print(pred[-1], pos_inds[-1])
     pos_loss = torch.log(pred) * torch.pow(1 - pred, 2) * pos_inds
     neg_loss = torch.log(1 - pred) * torch.pow(pred, 2) * neg_weights * neg_inds
 
