@@ -40,8 +40,6 @@ def main(opt):
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
-    for k in model.keys():
-        model[k] = model[k].to(opt.device)
 
     # -----------------dev----------------- #
     model_params = []

@@ -17,20 +17,17 @@ class ModleWithLoss(torch.nn.Module):
         self.tasks = tasks
         self.loss_D = loss_fn['D']
         self.loss_R = loss_fn['R']
-        self.loss = {'D': self.loss_D, 'R': self.loss_R}
         self.optimizer = optimizer
         self.model_rep = model['rep']
         self.model_D = model['D']
         self.model_R = model['R']
-        self.model = {'rep': self.model_rep, 'D': self.model_D, 'R': self.model_R}
-        self.loss_data = {}
-        self.grads = {}
-        self.scale = {}
 
     def forward(self, batch, phase='train'):
-        loss_data = self.loss_data
-        grads = self.grads
-        scale = self.scale
+        loss_fn = {'D': self.loss_D, 'R': self.loss_R}
+        model = {'rep': self.model_rep, 'D': self.model_D, 'R': self.model_R}
+        loss_data = {}
+        grads = {}
+        scale = {}
         images = batch['input']
         images = Variable(images)
 
@@ -38,7 +35,7 @@ class ModleWithLoss(torch.nn.Module):
         # First compute representations (z)
         with torch.no_grad():
             images_volatile = Variable(images.data)
-            rep = self.model['rep'](images_volatile)
+            rep = model['rep'](images_volatile)
         # As an approximate solution we only need gradients for input
         if isinstance(rep, list):
             # This is a hack to handle psp-net
@@ -52,8 +49,8 @@ class ModleWithLoss(torch.nn.Module):
         # Compute gradients of each loss function wrt z
         for t in self.tasks:
             self.optimizer.zero_grad()
-            out_t = self.model[t](rep_variable)
-            loss, _ = self.loss[t](out_t, batch)
+            out_t = model[t](rep_variable)
+            loss, _ = loss_fn[t](out_t, batch)
             loss_data[t] = loss.item()
             if phase == 'train':
                 loss.backward()
@@ -78,12 +75,12 @@ class ModleWithLoss(torch.nn.Module):
 
         # Scaled back-propagation
         self.optimizer.zero_grad()
-        rep = self.model['rep'](images)
+        rep = model['rep'](images)
         outputs = {}
         loss_stats = {}
         for i, t in enumerate(self.tasks):
-            out_t = self.model[t](rep)
-            loss_t, loss_stat = self.loss[t](out_t, batch)
+            out_t = model[t](rep)
+            loss_t, loss_stat = loss_fn[t](out_t, batch)
             outputs.update(out_t)
             loss_stats.update(loss_stat)
             loss_data[t] = loss_t.item()
