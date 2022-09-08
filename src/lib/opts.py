@@ -132,7 +132,7 @@ class opts(object):
         opt.gpus = [int(gpu) for gpu in opt.gpus.split(',')]
         opt.lr_step = [int(i) for i in opt.lr_step.split(',')]
         if opt.num_workers < 0:
-            opt.num_workers = 1 * len(opt.gpus)
+            opt.num_workers = 0 * len(opt.gpus)
 
         opt.fix_res = not opt.keep_res
         print('Fix size testing.' if opt.fix_res else 'Keep resolution testing.')
