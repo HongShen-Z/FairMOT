@@ -95,7 +95,6 @@ def save_model(path, epoch, model, optimizer=None, tasks=None):
     if tasks is None:
         tasks = ['D', 'R']
     if isinstance(model, torch.nn.DataParallel):
-        print('$' * 100)
         state_rep = model['rep'].module.state_dict()
         for t in tasks:
             key = 'state_{}'.format(t)

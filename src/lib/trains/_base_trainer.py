@@ -89,9 +89,6 @@ class ModleWithLoss(torch.nn.Module):
             else:
                 loss = scale[t] * loss_t
         loss_stats.update({'loss': loss})
-        if phase == 'train':
-            loss.backward()
-            self.optimizer.step()
 
         # outputs = self.model(batch['input'])
         # loss, loss_stats = self.loss(outputs, batch)
@@ -151,12 +148,12 @@ class BaseTrainer(object):
                     batch[k] = batch[k].to(device=opt.device, non_blocking=True)
 
             output, loss, loss_stats = model_with_loss(batch, phase=phase)
-            # loss = loss.mean()
-            # if phase == 'train':
-            #     # 2. add set_to_none=True
-            #     self.optimizer.zero_grad()
-            #     loss.backward()
-            #     self.optimizer.step()
+            loss = loss.mean()
+            if phase == 'train':
+                # 2. add set_to_none=True
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
             batch_time.update(time.time() - end)
             end = time.time()
 
