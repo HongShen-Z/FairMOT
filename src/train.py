@@ -74,6 +74,10 @@ def main(opt):
             model, opt.load_model, trainer.optimizer, opt.resume, opt.lr, opt.lr_step)
 
     print(model['rep'])
+    model['rep'] = torch.nn.DataParallel(model['rep'], list(range(len(opt.gpus))))
+    print('=' * 100)
+    print(model['rep'])
+
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
         log_dict_train, _ = trainer.train(epoch, train_loader)
