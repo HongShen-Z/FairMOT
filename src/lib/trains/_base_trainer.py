@@ -56,6 +56,7 @@ class ModleWithLoss(torch.nn.Module):
             loss, _ = self.loss[t](out_t, batch)
             loss_data[t] = loss.item()
             if phase == 'train':
+                loss = loss.mean()
                 loss.backward()
             grads[t] = []
             if list_rep:
@@ -91,6 +92,7 @@ class ModleWithLoss(torch.nn.Module):
                 loss = loss + scale[t] * loss_t
             else:
                 loss = scale[t] * loss_t
+        loss = loss.mean()
         loss_stats.update({'loss': loss})
         if phase == 'train':
             loss.backward()
