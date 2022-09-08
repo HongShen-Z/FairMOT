@@ -39,7 +39,9 @@ def main(opt):
     opt.device = torch.device('cuda' if opt.gpus[0] >= 0 else 'cpu')
 
     print('Creating model...')
-    model = create_model(opt.arch, opt.heads, opt.head_conv).to(opt.device)
+    model = create_model(opt.arch, opt.heads, opt.head_conv)
+    for k in model.keys():
+        model[k] = model[k].to(opt.device)
 
     # -----------------dev----------------- #
     model_params = []
