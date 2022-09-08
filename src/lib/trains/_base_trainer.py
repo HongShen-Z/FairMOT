@@ -8,7 +8,6 @@ from progress.bar import Bar
 from models.data_parallel import DataParallel
 from utils.utils import AverageMeter
 from torch.autograd import Variable
-from torch.nn import Parameter
 from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
 
 
@@ -33,21 +32,21 @@ class ModleWithLoss(torch.nn.Module):
         grads = self.grads
         scale = self.scale
         images = batch['input']
-        images = Parameter(images, requires_grad=False)
+        images = Variable(images, requires_grad=False)
 
         self.optimizer.zero_grad()
         # First compute representations (z)
         with torch.no_grad():
-            images_volatile = Parameter(images.data)
+            images_volatile = Variable(images.data)
             rep = self.model['rep'](images_volatile)
         # As an approximate solution we only need gradients for input
         if isinstance(rep, list):
             # This is a hack to handle psp-net
             rep = rep[0]
-            rep_variable = [Parameter(rep.data.clone(), requires_grad=True)]
+            rep_variable = [Variable(rep.data.clone(), requires_grad=True)]
             list_rep = True
         else:
-            rep_variable = Parameter(rep.data.clone(), requires_grad=True)
+            rep_variable = Variable(rep.data.clone(), requires_grad=True)
             list_rep = False
 
         # Compute gradients of each loss function wrt z
@@ -60,10 +59,10 @@ class ModleWithLoss(torch.nn.Module):
                 loss.backward()
             grads[t] = []
             if list_rep:
-                grads[t].append(Parameter(rep_variable[0].grad.data.clone(), requires_grad=False))
+                grads[t].append(Variable(rep_variable[0].grad.data.clone(), requires_grad=False))
                 rep_variable[0].grad.data.zero_()
             else:
-                grads[t].append(Parameter(rep_variable.grad.data.clone(), requires_grad=False))
+                grads[t].append(Variable(rep_variable.grad.data.clone(), requires_grad=False))
                 rep_variable.grad.data.zero_()
 
         # Normalize all gradients, this is optional and not included in the paper.
