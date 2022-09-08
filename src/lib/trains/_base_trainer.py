@@ -5,7 +5,7 @@ from __future__ import print_function
 import time
 import torch
 from progress.bar import Bar
-from models.data_parallel import DataParallel
+from models.data_parallel import DataParallel, data_parallel
 from utils.utils import AverageMeter
 from torch.autograd import Variable
 from trains.min_norm_solvers import MinNormSolver, gradient_normalizers
@@ -115,11 +115,10 @@ class BaseTrainer(object):
 
     def set_device(self, gpus, chunk_sizes, device):
         if len(gpus) > 1:
-            self.model_with_loss.to(device)
             gpus = list(range(len(gpus)))
-            self.model_with_loss = DataParallel(
+            self.model_with_loss = data_parallel(
                 self.model_with_loss, device_ids=gpus,
-                chunk_sizes=chunk_sizes).to(device)
+                ).to(device)
         else:
             self.model_with_loss = self.model_with_loss.to(device)
 
