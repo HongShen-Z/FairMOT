@@ -116,10 +116,11 @@ class BaseTrainer(object):
 
     def set_device(self, gpus, chunk_sizes, device):
         if len(gpus) > 1:
+            self.model_with_loss.cuda()
             gpus = list(range(len(gpus)))
             self.model_with_loss = DataParallel(
                 self.model_with_loss, device_ids=gpus,
-                chunk_sizes=chunk_sizes).to(device)
+                chunk_sizes=chunk_sizes)
         else:
             self.model_with_loss = self.model_with_loss.to(device)
 
