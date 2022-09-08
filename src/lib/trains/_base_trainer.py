@@ -33,7 +33,7 @@ class ModleWithLoss(torch.nn.Module):
         grads = self.grads
         scale = self.scale
         images = batch['input']
-        images = Parameter(images.cuda(), requires_grad=False)
+        images = Parameter(images, requires_grad=False)
 
         self.optimizer.zero_grad()
         # First compute representations (z)
