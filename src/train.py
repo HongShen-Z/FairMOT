@@ -74,9 +74,6 @@ def main(opt):
 
     trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
-    print('=' * 100)
-    print(model)
-
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
         log_dict_train, _ = trainer.train(epoch, train_loader)

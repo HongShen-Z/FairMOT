@@ -121,6 +121,7 @@ class BaseTrainer(object):
             self.model_with_loss = DataParallel(
                 self.model_with_loss, device_ids=gpus,
                 chunk_sizes=chunk_sizes).to(device)
+            print(self.model_with_loss)
         else:
             self.model_with_loss = self.model_with_loss.to(device)
 
