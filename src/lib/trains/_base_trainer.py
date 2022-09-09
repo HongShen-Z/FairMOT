@@ -102,25 +102,25 @@ class BaseTrainer(object):
         self.optimizer = optimizer
         self.loss_stats, self.loss = self._get_losses(opt)
         self.model = model
-        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer, opt.tasks)
         loss_params = []
         for m in self.loss:
             loss_params += self.loss[m].parameters()
         self.optimizer.add_param_group({'params': loss_params})
+        self.model_with_loss = ModleWithLoss(model, self.loss, self.optimizer, opt.tasks)
 
     def set_device(self, gpus, chunk_sizes, device):
         if len(gpus) > 1:
             gpus = list(range(len(gpus)))
-            self.model['rep'] = DataParallel(self.model['rep'], device_ids=gpus,
-                                             chunk_sizes=chunk_sizes).to(device)
-            for t in self.opt.tasks:
-                self.model[t] = DataParallel(self.model[t], device_ids=gpus,
-                                             chunk_sizes=chunk_sizes).to(device)
-                self.loss[t] = DataParallel(self.loss[t], device_ids=gpus,
-                                            chunk_sizes=chunk_sizes).to(device)
-            # self.model_with_loss = DataParallel(
-            #     self.model_with_loss, device_ids=gpus,
-            #     chunk_sizes=chunk_sizes).to(device)
+            # self.model['rep'] = DataParallel(self.model['rep'], device_ids=gpus,
+            #                                  chunk_sizes=chunk_sizes).to(device)
+            # for t in self.opt.tasks:
+            #     self.model[t] = DataParallel(self.model[t], device_ids=gpus,
+            #                                  chunk_sizes=chunk_sizes).to(device)
+            #     self.loss[t] = DataParallel(self.loss[t], device_ids=gpus,
+            #                                 chunk_sizes=chunk_sizes).to(device)
+            self.model_with_loss = DataParallel(
+                self.model_with_loss, device_ids=gpus,
+                chunk_sizes=chunk_sizes).to(device)
         else:
             self.model_with_loss = self.model_with_loss.to(device)
 
