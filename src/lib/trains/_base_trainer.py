@@ -116,6 +116,8 @@ class BaseTrainer(object):
             for t in self.opt.tasks:
                 self.model[t] = DataParallel(self.model[t], device_ids=gpus,
                                              chunk_sizes=chunk_sizes).to(device)
+                self.loss[t] = DataParallel(self.loss[t], device_ids=gpus,
+                                            chunk_sizes=chunk_sizes).to(device)
             # self.model_with_loss = DataParallel(
             #     self.model_with_loss, device_ids=gpus,
             #     chunk_sizes=chunk_sizes).to(device)
