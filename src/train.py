@@ -73,8 +73,6 @@ def main(opt):
         model, optimizer, start_epoch = load_model(
             model, opt.load_model, trainer.optimizer, opt.resume, opt.lr, opt.lr_step)
 
-    print(model)
-    model = torch.nn.DataParallel(model, list(range(len(opt.gpus))))
     print('=' * 100)
     print(model)
 
