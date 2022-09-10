@@ -571,7 +571,8 @@ class DLASeq(nn.Module):
         x = self.DLABackbone(x)
         x1 = self.DLADecoderD(x)
         x2 = self.DLADecoderR(x)
-        return x1.update(x2)
+        x1 = x1.update(x2)
+        return x1
 
 
 def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
