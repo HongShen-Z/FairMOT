@@ -11,7 +11,7 @@ conda deactivate
 conda activate fair
 cd src
 python train.py mot --exp_id ch_dla34_mgdap1 --gpus $CUDA_VISIBLE_DEVICES \
---batch_size 32 --num_epochs 60 \
+--batch_size 32 --load_model '../models/ctdet_coco_dla_2x.pth' --num_epochs 60 \
 --lr_step '50' --lr 1e-3 --data_cfg '../src/lib/cfg/crowdhuman.json'
 #python train.py mot --exp_id ch_res34_whe2 --gpus $CUDA_VISIBLE_DEVICES --arch 'resdcn_34' --resume \
 #--batch_size 32 --num_epochs 300 --load_model '../exp/mot/ch_res34_whe1/models/model_last.pth' \

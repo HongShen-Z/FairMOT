@@ -39,13 +39,17 @@ def load_model(model, model_path, optimizer=None, resume=False,
     if tasks is None:
         tasks = ['rep', 'D', 'R']
     else:
-        tasks.append('rep')
+        tasks.insert(0, 'rep')
     start_epoch = 0
     checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
     print('loaded {}, epoch {}'.format(model_path, checkpoint['epoch']))
+    if 'rep' not in checkpoint.keys():
+        pretrain = True
+    else:
+        pretrain = False
     for t in tasks:
         key = 'state_{}'.format(t)
-        state_dict_ = checkpoint[key]
+        state_dict_ = checkpoint['state_dict'] if pretrain else checkpoint[key]
         state_dict = {}
 
         # convert data_parallal to model
@@ -75,6 +79,9 @@ def load_model(model, model_path, optimizer=None, resume=False,
                 print('No param {}.'.format(k) + msg)
                 state_dict[k] = model_state_dict[k]
         model[t].load_state_dict(state_dict, strict=False)
+
+        if pretrain:
+            break
 
     # resume optimizer parameters
     if optimizer is not None and resume:
