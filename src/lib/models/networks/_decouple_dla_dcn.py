@@ -571,7 +571,7 @@ class DLASeq(nn.Module):
         x = self.DLABackbone(x)
         x1 = self.DLADecoderD(x)
         x2 = self.DLADecoderR(x)
-        x1 = x1.update(x2)
+        x1.update(x2)
         return x1
 
 
