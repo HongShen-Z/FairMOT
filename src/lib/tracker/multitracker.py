@@ -10,6 +10,7 @@ import torch
 import torch.nn.functional as F
 from models import *
 from ..models.decode import mot_decode
+from ..models.networks._decouple_dla_dcn import DLASeq
 from ..models.model import create_model, load_model
 from ..models.utils import _tranpose_and_gather_feat
 from ..tracking_utils.kalman_filter import KalmanFilter
@@ -178,7 +179,8 @@ class JDETracker(object):
         print('Creating model...')
         self.model = create_model(opt.arch, opt.heads, opt.head_conv)
         self.model = load_model(self.model, opt.load_model)
-        self.model = self.model.to(opt.device)
+        self.model = DLASeq(self.model).to(opt.device)
+        # self.model = self.model.to(opt.device)
         self.model.eval()
 
         self.tracked_stracks = []  # type: list[STrack]
@@ -240,7 +242,7 @@ class JDETracker(object):
 
         ''' Step 1: Network forward, get detections & embeddings'''
         with torch.no_grad():
-            output = self.model(im_blob)[-1]
+            output = self.model(im_blob)
             hm = output['hm'].sigmoid_()
             wh = output['wh']
             id_feature = output['id']
