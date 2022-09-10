@@ -69,7 +69,7 @@ class ModleWithLoss(torch.nn.Module):
                 grads[t][gr_i] = grads[t][gr_i] / gn[t]
 
         # Frank-Wolfe iteration to compute scales.
-        sol, min_norm = MinNormSolver.find_min_norm_element([grads[t] for t in self.tasks])
+        sol, min_norm = MinNormSolver.find_min_norm_element_FW([grads[t] for t in self.tasks])
         for i, t in enumerate(self.tasks):
             scale[t] = float(sol[i])
 
