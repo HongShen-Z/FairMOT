@@ -49,6 +49,7 @@ class ModleWithLoss(torch.nn.Module):
         # Compute gradients of each loss function wrt z
         for t in self.tasks:
             self.optimizer.zero_grad()
+            print(t)
             out_t = model[t](rep_variable)
             loss, _ = loss_fn[t](out_t, batch)
             loss_data[t] = loss.item()
