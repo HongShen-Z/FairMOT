@@ -35,11 +35,11 @@ def create_model(arch, heads, head_conv):
 
 
 def load_model(model, model_path, optimizer=None, resume=False,
-               lr=None, lr_step=None, tasks=None):
-    if tasks is None:
+               lr=None, lr_step=None, task=None):
+    if task is None:
         tasks = ['rep', 'D', 'R']
     else:
-        tasks.insert(0, 'rep')
+        tasks = ['rep'] + task
     start_epoch = 0
     checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
     print('loaded {}, epoch {}'.format(model_path, checkpoint['epoch']))
@@ -103,12 +103,12 @@ def load_model(model, model_path, optimizer=None, resume=False,
         return model
 
 
-def save_model(path, epoch, model, optimizer=None, tasks=None):
+def save_model(path, epoch, model, optimizer=None, task=None):
     data = {'epoch': epoch}
-    if tasks is None:
+    if task is None:
         tasks = ['rep', 'D', 'R']
     else:
-        tasks.append('rep')
+        tasks = ['rep'] + task
     if isinstance(model, torch.nn.DataParallel):
         for t in tasks:
             key = 'state_{}'.format(t)

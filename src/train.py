@@ -76,7 +76,6 @@ def main(opt):
 
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
-        print(opt.tasks)
         log_dict_train, _ = trainer.train(epoch, train_loader)
         logger.write('epoch: {} |'.format(epoch))
         for k, v in log_dict_train.items():
