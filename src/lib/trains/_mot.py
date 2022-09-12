@@ -194,6 +194,7 @@ class ReidLoss(torch.nn.Module):
             else:
                 id_loss += self.IDLoss(id_output, id_target)
 
+            id_loss *= 0.5
         loss_stats = {'id_loss': id_loss}
         return id_loss, loss_stats
 
