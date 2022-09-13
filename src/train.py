@@ -15,7 +15,7 @@ from lib.models.model import create_model, load_model, save_model
 from models.data_parallel import DataParallel
 from lib.logger import Logger
 from lib.datasets.dataset_factory import get_dataset
-from lib.trains.train_factory import train_factory
+from lib.trains.train_factory import train_factory, get_cosine_schedule_with_warmup
 
 
 def main(opt):
@@ -75,9 +75,13 @@ def main(opt):
 
     trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
+    lrs = get_cosine_schedule_with_warmup(opt.lr, 6, opt.num_epochs)
+
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
-        # print('epoch: {}, lr: {}'.format(epoch, optimizer.param_groups[0]['lr']))
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lrs[epoch]
+        print('epoch: {}, lr: {}'.format(epoch, optimizer.param_groups[0]['lr']))
         log_dict_train, _ = trainer.train(epoch, train_loader)
         logger.write('epoch: {} |'.format(epoch))
         for k, v in log_dict_train.items():
@@ -91,13 +95,13 @@ def main(opt):
             save_model(os.path.join(opt.save_dir, 'models', 'model_last.pth'),
                        epoch, model, optimizer, opt.tasks)
         logger.write('\n')
-        if epoch in opt.lr_step:
-            save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
-                       epoch, model, optimizer, opt.tasks)
-            lr = opt.lr * (0.1 ** (opt.lr_step.index(epoch) + 1))
-            print('Drop LR to', lr)
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+        # if epoch in opt.lr_step:
+        #     save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
+        #                epoch, model, optimizer, opt.tasks)
+        #     lr = opt.lr * (0.1 ** (opt.lr_step.index(epoch) + 1))
+        #     print('Drop LR to', lr)
+        #     for param_group in optimizer.param_groups:
+        #         param_group['lr'] = lr
         if epoch % 5 == 0 or epoch >= opt.num_epochs - 5:
             save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
                        epoch, model, optimizer, opt.tasks)
