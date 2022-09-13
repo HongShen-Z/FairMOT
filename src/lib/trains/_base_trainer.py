@@ -156,7 +156,8 @@ class BaseTrainer(object):
                     batch[k] = batch[k].to(device=opt.device, non_blocking=True)
 
             output, loss, loss_stats = model_with_loss(batch, phase=phase)
-            loss = loss.mean()
+            if len(opt.gpus) > 1:
+                loss = loss.mean()
             if phase == 'train':
                 # 2. add set_to_none=True
                 self.optimizer.zero_grad()
