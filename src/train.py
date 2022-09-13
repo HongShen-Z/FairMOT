@@ -46,8 +46,8 @@ def main(opt):
     model_params = []
     for m in model:
         model_params += model[m].parameters()
-    # optimizer = torch.optim.Adam(model_params, opt.lr)
-    optimizer = torch.optim.RAdam(model_params, opt.lr)
+    optimizer = torch.optim.Adam(model_params, opt.lr)
+    # optimizer = torch.optim.RAdam(model_params, opt.lr)
     # -----------------dev----------------- #
 
     # optimizer = torch.optim.Adam(model.parameters(), opt.lr)
