@@ -12,7 +12,7 @@ train_factory = {
 
 def get_cosine_schedule_with_warmup(
         learning_rate, num_warmup_steps: int, num_training_steps: int, num_cycles: float = 0.5,
-        min_lr: float = 1e-6, last_epoch: int = 0
+        min_lr: float = 1e-5, last_epoch: int = 0
 ):
     """
     Create a schedule with a learning rate that decreases following the values of the cosine function between the

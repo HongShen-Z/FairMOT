@@ -75,7 +75,7 @@ def main(opt):
 
     trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
-    lrs = get_cosine_schedule_with_warmup(opt.lr, 6, opt.num_epochs)
+    lrs = get_cosine_schedule_with_warmup(opt.lr, 10, opt.num_epochs)
 
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
