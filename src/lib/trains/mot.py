@@ -4,10 +4,8 @@ from __future__ import print_function
 
 import math
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision
 
 from fvcore.nn import sigmoid_focal_loss_jit
 

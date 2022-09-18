@@ -1,22 +1,11 @@
-import itertools
-import os
-import os.path as osp
-import time
 from collections import deque
 
-import cv2
-import numpy as np
-import torch
-import torch.nn.functional as F
-from models import *
 from ..models.decode import mot_decode
-from ..models.networks._decouple_dla_dcn import DLASeq
 from ..models.model import create_model, load_model
 from ..models.utils import _tranpose_and_gather_feat
 from ..tracking_utils.kalman_filter import KalmanFilter
 from ..tracking_utils.log import logger
 from tracking_utils.utils import *
-from utils.image import get_affine_transform
 from ..utils.post_process import ctdet_post_process
 
 from tracker import matching
@@ -179,7 +168,7 @@ class JDETracker(object):
         print('Creating model...')
         self.model = create_model(opt.arch, opt.heads, opt.head_conv)
         self.model = load_model(self.model, opt.load_model)
-        self.model = DLASeq(self.model).to(opt.device)
+        self.model = self.model.to(opt.device)
         # self.model = self.model.to(opt.device)
         self.model.eval()
 
