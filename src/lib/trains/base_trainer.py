@@ -7,6 +7,7 @@ import torch
 from progress.bar import Bar
 from models.data_parallel import DataParallel
 from utils.utils import AverageMeter
+from .grad_norm import gradNorm
 
 
 class ModleWithLoss(torch.nn.Module):
@@ -20,7 +21,7 @@ class ModleWithLoss(torch.nn.Module):
         # with torch.cuda.amp.autocast():
         outputs = self.model(batch['input'])
         loss, loss_stats = self.loss(outputs, batch)
-        return outputs[-1], loss, loss_stats
+        return outputs, loss, loss_stats
 
 
 class BaseTrainer(object):

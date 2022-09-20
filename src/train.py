@@ -8,7 +8,7 @@ import json
 import torch
 import torch.utils.data
 from torchvision.transforms import transforms as T
-from opts import opts
+from lib.opts import opts
 from lib.models.model import create_model, load_model, save_model
 from lib.logger import Logger
 from lib.datasets.dataset_factory import get_dataset
@@ -38,6 +38,8 @@ def main(opt):
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
+    print(model)
+    return None
 
     optimizer = torch.optim.Adam(model.parameters(), opt.lr)
     # optimizer = torch.optim.SGD(model.parameters(), opt.lr, momentum=0.9, weight_decay=0.0004)

@@ -96,7 +96,11 @@ class MotLoss(torch.nn.Module):
                     id_loss += self.IDLoss(id_output, id_target)
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
-        if opt.multi_loss == 'uncertainty':
+
+        if opt.multi_loss == 'grad_norm':
+            task_losses = {'D': det_loss, 'R': id_loss}
+
+        elif opt.multi_loss == 'uncertainty':
             loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
             loss *= 0.5
         else:
