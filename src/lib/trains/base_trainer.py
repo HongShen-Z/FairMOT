@@ -27,7 +27,7 @@ class BaseTrainer(object):
     def __init__(self, opt, model, optimizer=None):
         self.opt = opt
         self.optimizer = optimizer
-        self.loss_stats, self.loss = self._get_losses(opt)
+        self.loss_stats, self.loss = self._get_losses(opt, model)
         self.model_with_loss = ModleWithLoss(model, self.loss)
         self.optimizer.add_param_group({'params': self.loss.parameters()})
 
