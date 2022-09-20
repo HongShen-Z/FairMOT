@@ -24,8 +24,7 @@ class ModleWithLoss(torch.nn.Module):
 
 
 class BaseTrainer(object):
-    def __init__(
-            self, opt, model, optimizer=None):
+    def __init__(self, opt, model, optimizer=None):
         self.opt = opt
         self.optimizer = optimizer
         self.loss_stats, self.loss = self._get_losses(opt)
@@ -113,7 +112,7 @@ class BaseTrainer(object):
     def save_result(self, output, batch, results):
         raise NotImplementedError
 
-    def _get_losses(self, opt):
+    def _get_losses(self, opt, model):
         raise NotImplementedError
 
     def val(self, epoch, data_loader):

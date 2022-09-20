@@ -15,10 +15,11 @@ from ..models.decode import mot_decode
 from ..models.utils import _sigmoid, _tranpose_and_gather_feat
 from ..utils.post_process import ctdet_post_process
 from .base_trainer import BaseTrainer
+from .grad_norm import call_gradnorm
 
 
 class MotLoss(torch.nn.Module):
-    def __init__(self, opt):
+    def __init__(self, opt, model):
         super(MotLoss, self).__init__()
         self.crit = torch.nn.MSELoss() if opt.mse_loss == 'mse' else \
             FocalLoss() if opt.mse_loss == 'focal' else VarifocalLoss()
@@ -41,6 +42,7 @@ class MotLoss(torch.nn.Module):
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
         self.s_id = nn.Parameter(-1.05 * torch.ones(1))
+        self.model = model
 
     def forward(self, outputs, batch):
         opt = self.opt
@@ -99,7 +101,7 @@ class MotLoss(torch.nn.Module):
 
         if opt.multi_loss == 'grad_norm':
             task_losses = {'D': det_loss, 'R': id_loss}
-
+            loss = call_gradnorm(self.model.ida_up.parameters(), task_losses)
         elif opt.multi_loss == 'uncertainty':
             loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
             loss *= 0.5
@@ -114,9 +116,9 @@ class MotTrainer(BaseTrainer):
     def __init__(self, opt, model, optimizer=None):
         super(MotTrainer, self).__init__(opt, model, optimizer=optimizer)
 
-    def _get_losses(self, opt):
+    def _get_losses(self, opt, model):
         loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
-        loss = MotLoss(opt)
+        loss = MotLoss(opt, model)
         return loss_states, loss
 
     def save_result(self, output, batch, results):
