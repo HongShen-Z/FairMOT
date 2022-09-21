@@ -19,7 +19,7 @@ from .grad_norm import call_gradnorm
 
 
 class MotLoss(torch.nn.Module):
-    def __init__(self, opt, model):
+    def __init__(self, opt, share_w):
         super(MotLoss, self).__init__()
         self.crit = torch.nn.MSELoss() if opt.mse_loss == 'mse' else \
             FocalLoss() if opt.mse_loss == 'focal' else VarifocalLoss()
@@ -42,7 +42,7 @@ class MotLoss(torch.nn.Module):
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
         self.s_id = nn.Parameter(-1.05 * torch.ones(1))
-        self.model = model
+        self.share_w = share_w
 
     def forward(self, outputs, batch):
         opt = self.opt
@@ -101,7 +101,7 @@ class MotLoss(torch.nn.Module):
 
         if opt.multi_loss == 'grad_norm':
             task_losses = {'D': det_loss, 'R': id_loss}
-            loss = call_gradnorm(self.model.ida_up.parameters(), task_losses)
+            loss = call_gradnorm(self.share_w, task_losses)
         elif opt.multi_loss == 'uncertainty':
             loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
             loss *= 0.5
