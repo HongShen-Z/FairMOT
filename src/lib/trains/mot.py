@@ -47,55 +47,53 @@ class MotLoss(torch.nn.Module):
     def forward(self, outputs, batch):
         opt = self.opt
         hm_loss, wh_loss, off_loss, id_loss = 0, 0, 0, 0
-        for s in range(opt.num_stacks):
-            output = outputs[s]
-            if opt.mse_loss != 'mse':
-                output['hm'] = _sigmoid(output['hm'])
-            hm_loss += self.crit(output['hm'], batch['hm']) / opt.num_stacks
+        if opt.mse_loss != 'mse':
+            outputs['hm'] = _sigmoid(outputs['hm'])
+        hm_loss += self.crit(outputs['hm'], batch['hm'])
 
-            if opt.wh_weight > 0:
-                if opt.dense_wh:
-                    H, W = output['hm'].shape[2:]
-                    mask = batch['box_weight'].view(-1, H, W)
-                    base_step = opt.down_ratio
-                    shifts_x = torch.arange(0, (W - 1) * base_step + 1, base_step,
-                                            dtype=torch.float32, device=batch['hm'].device)
-                    shifts_y = torch.arange(0, (H - 1) * base_step + 1, base_step,
-                                            dtype=torch.float32, device=batch['hm'].device)
-                    shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
-                    base_loc = torch.stack((shift_x, shift_y), dim=0)  # (2, h, w)
-                    # (batch, h, w, 4)
-                    pred_boxes = torch.cat((base_loc - output['wh'][:, [0, 1]],
-                                            base_loc + output['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
-                    # (batch, h, w, 4)
-                    boxes = batch['box_target'].permute(0, 2, 3, 1)
-                    wh_loss += self.crit_wh(
-                        pred_boxes, mask, boxes) / opt.num_stacks
-                else:
-                    wh_loss += self.crit_wh(
-                        output['wh'], batch['reg_mask'],
-                        batch['ind'], batch['wh']) / opt.num_stacks
+        if opt.wh_weight > 0:
+            if opt.dense_wh:
+                H, W = outputs['hm'].shape[2:]
+                mask = batch['box_weight'].view(-1, H, W)
+                base_step = opt.down_ratio
+                shifts_x = torch.arange(0, (W - 1) * base_step + 1, base_step,
+                                        dtype=torch.float32, device=batch['hm'].device)
+                shifts_y = torch.arange(0, (H - 1) * base_step + 1, base_step,
+                                        dtype=torch.float32, device=batch['hm'].device)
+                shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+                base_loc = torch.stack((shift_x, shift_y), dim=0)  # (2, h, w)
+                # (batch, h, w, 4)
+                pred_boxes = torch.cat((base_loc - outputs['wh'][:, [0, 1]],
+                                        base_loc + outputs['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
+                # (batch, h, w, 4)
+                boxes = batch['box_target'].permute(0, 2, 3, 1)
+                wh_loss += self.crit_wh(
+                    pred_boxes, mask, boxes)
+            else:
+                wh_loss += self.crit_wh(
+                    outputs['wh'], batch['reg_mask'],
+                    batch['ind'], batch['wh'])
 
-            if opt.reg_offset and opt.off_weight > 0:
-                off_loss += self.crit_reg(output['reg'], batch['reg_mask'],
-                                          batch['ind'], batch['reg']) / opt.num_stacks
+        if opt.reg_offset and opt.off_weight > 0:
+            off_loss += self.crit_reg(outputs['reg'], batch['reg_mask'],
+                                      batch['ind'], batch['reg'])
 
-            if opt.id_weight > 0:
-                id_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
-                id_head = id_head[batch['reg_mask'] > 0].contiguous()
-                id_head = self.emb_scale * F.normalize(id_head)
-                id_target = batch['ids'][batch['reg_mask'] > 0]
+        if opt.id_weight > 0:
+            id_head = _tranpose_and_gather_feat(outputs['id'], batch['ind'])
+            id_head = id_head[batch['reg_mask'] > 0].contiguous()
+            id_head = self.emb_scale * F.normalize(id_head)
+            id_target = batch['ids'][batch['reg_mask'] > 0]
 
-                id_output = self.classifier(id_head).contiguous()
-                if self.opt.id_loss == 'focal':
-                    id_target_one_hot = id_output.new_zeros((id_head.size(0), self.nID)).scatter_(1,
-                                                                                                  id_target.long().view(
-                                                                                                      -1, 1), 1)
-                    id_loss += sigmoid_focal_loss_jit(id_output, id_target_one_hot,
-                                                      alpha=0.25, gamma=2.0, reduction="sum"
-                                                      ) / id_output.size(0)
-                else:
-                    id_loss += self.IDLoss(id_output, id_target)
+            id_output = self.classifier(id_head).contiguous()
+            if self.opt.id_loss == 'focal':
+                id_target_one_hot = id_output.new_zeros((id_head.size(0), self.nID)).scatter_(1,
+                                                                                              id_target.long().view(
+                                                                                                  -1, 1), 1)
+                id_loss += sigmoid_focal_loss_jit(id_output, id_target_one_hot,
+                                                  alpha=0.25, gamma=2.0, reduction="sum"
+                                                  ) / id_output.size(0)
+            else:
+                id_loss += self.IDLoss(id_output, id_target)
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
