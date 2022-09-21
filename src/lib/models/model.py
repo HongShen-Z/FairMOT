@@ -32,53 +32,40 @@ def create_model(arch, heads, head_conv):
 
 
 def load_model(model, model_path, optimizer=None, resume=False,
-               lr=None, lr_step=None, task=None):
-    if task is None:
-        tasks = ['rep', 'D', 'R']
-    else:
-        tasks = ['rep'] + task
+               lr=None, lr_step=None):
     start_epoch = 0
     checkpoint = torch.load(model_path, map_location=lambda storage, loc: storage)
     print('loaded {}, epoch {}'.format(model_path, checkpoint['epoch']))
-    if 'state_rep' not in checkpoint.keys():
-        pretrain = True
-    else:
-        pretrain = False
-    for t in tasks:
-        key = 'state_{}'.format(t)
-        state_dict_ = checkpoint['state_dict'] if pretrain else checkpoint[key]
-        state_dict = {}
+    state_dict_ = checkpoint['state_dict']
+    state_dict = {}
 
-        # convert data_parallal to model
-        for k in state_dict_:
-            if k.startswith('module') and not k.startswith('module_list'):
-                state_dict[k[7:]] = state_dict_[k]
-            else:
-                state_dict[k] = state_dict_[k]
-        model_state_dict = model[t].state_dict()
+    # convert data_parallal to model
+    for k in state_dict_:
+        if k.startswith('module') and not k.startswith('module_list'):
+            state_dict[k[7:]] = state_dict_[k]
+        else:
+            state_dict[k] = state_dict_[k]
+    model_state_dict = model.state_dict()
 
-        # check loaded parameters and created model parameters
-        msg = 'If you see this, your model does not fully load the ' + \
-              'pre-trained weight. Please make sure ' + \
-              'you have correctly specified --arch xxx ' + \
-              'or set the correct --num_classes for your own dataset.'
-        for k in state_dict:
-            if k in model_state_dict:
-                if state_dict[k].shape != model_state_dict[k].shape:
-                    print('Skip loading parameter {}, required shape{}, ' \
-                          'loaded shape{}. {}'.format(
-                        k, model_state_dict[k].shape, state_dict[k].shape, msg))
-                    state_dict[k] = model_state_dict[k]
-            else:
-                print('Drop parameter {}.'.format(k) + msg)
-        for k in model_state_dict:
-            if not (k in state_dict):
-                print('No param {}.'.format(k) + msg)
+    # check loaded parameters and created model parameters
+    msg = 'If you see this, your model does not fully load the ' + \
+          'pre-trained weight. Please make sure ' + \
+          'you have correctly specified --arch xxx ' + \
+          'or set the correct --num_classes for your own dataset.'
+    for k in state_dict:
+        if k in model_state_dict:
+            if state_dict[k].shape != model_state_dict[k].shape:
+                print('Skip loading parameter {}, required shape{}, ' \
+                      'loaded shape{}. {}'.format(
+                    k, model_state_dict[k].shape, state_dict[k].shape, msg))
                 state_dict[k] = model_state_dict[k]
-        model[t].load_state_dict(state_dict, strict=False)
-
-        if pretrain:
-            break
+        else:
+            print('Drop parameter {}.'.format(k) + msg)
+    for k in model_state_dict:
+        if not (k in state_dict):
+            print('No param {}.'.format(k) + msg)
+            state_dict[k] = model_state_dict[k]
+    model.load_state_dict(state_dict, strict=False)
 
     # resume optimizer parameters
     if optimizer is not None and resume:
@@ -100,20 +87,12 @@ def load_model(model, model_path, optimizer=None, resume=False,
         return model
 
 
-def save_model(path, epoch, model, optimizer=None, task=None):
+def save_model(path, epoch, model, optimizer=None):
     data = {'epoch': epoch}
-    if task is None:
-        tasks = ['rep', 'D', 'R']
-    else:
-        tasks = ['rep'] + task
     if isinstance(model, torch.nn.DataParallel):
-        for t in tasks:
-            key = 'state_{}'.format(t)
-            data[key] = model[t].module.state_dict()
+        data['state_dict'] = model.module.state_dict()
     else:
-        for t in tasks:
-            key = 'state_{}'.format(t)
-            data[key] = model[t].state_dict()
+        data['state_dict'] = model.state_dict()
     if not (optimizer is None):
         data['optimizer'] = optimizer.state_dict()
     torch.save(data, path)
