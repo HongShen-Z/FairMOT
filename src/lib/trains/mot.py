@@ -67,8 +67,7 @@ class MotLoss(torch.nn.Module):
                                         base_loc + outputs['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
                 # (batch, h, w, 4)
                 boxes = batch['box_target'].permute(0, 2, 3, 1)
-                wh_loss += self.crit_wh(
-                    pred_boxes, mask, boxes)
+                wh_loss += self.crit_wh(pred_boxes, mask, boxes)
             else:
                 wh_loss += self.crit_wh(
                     outputs['wh'], batch['reg_mask'],
