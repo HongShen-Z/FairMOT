@@ -14,8 +14,8 @@ import copy
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms as T
 from cython_bbox import bbox_overlaps as bbox_ious
-from ...utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
-from ...utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta, bbox_areas
+from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
+from utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta, bbox_areas
 
 
 class LoadImages:  # for inference
