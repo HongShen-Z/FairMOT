@@ -9,7 +9,7 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
-python track.py mot --val_mot20 True --load_model ../exp/mot/ch_dla34_gd/models/model_60.pth --conf_thres 0.3 \
+python track.py mot --val_mot20 True --load_model ../exp/mot/ch_dla34_gd/models/model_75.pth --conf_thres 0.3 \
 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT20_ch_gd
 #python track.py mot --val_mot15 True --load_model ../exp/mot/ch_dla34_wh_eiou4/models/model_320.pth \
 #--conf_thres 0.6 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT15_ch_wh_eiou4
