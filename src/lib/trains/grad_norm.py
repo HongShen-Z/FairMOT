@@ -70,7 +70,7 @@ def call_gradnorm(shared_w, task_losses):
         :return: loss, the sum of net loss and grad loss
     """
     task_names = [name for name in task_losses]
-    gradnorm = GradNorm(task_names)
+    gradnorm = GradNorm(task_names, alpha=0.5)
     gnorm_loss, net_loss = gradnorm(shared_w=shared_w, losses=task_losses)
     loss = gnorm_loss + net_loss
     return loss
