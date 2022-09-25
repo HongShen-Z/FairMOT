@@ -480,19 +480,22 @@ class JointDataset(LoadImagesAndLabels):  # for training
             bbox_xy[3] = bbox_xy[1] + bbox_xy[3]
 
             if h > 0 and w > 0:
-                # radius = gaussian_radius((math.ceil(h), math.ceil(w)))
-                # radius = max(0, int(radius))
-                # radius = 6 if self.opt.mse_loss == 'mse' else radius
-                # #radius = max(1, int(radius)) if self.opt.mse_loss else radius
-
-                rw, rh = gaussian_radius_xy((math.ceil(h), math.ceil(w)), self.opt.alpha)
-                rw = max(0, int(rw))
-                rh = max(0, int(rh))
                 ct = np.array(
                     [bbox[0], bbox[1]], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
-                # draw_gaussian(hm[cls_id], ct_int, radius)
-                draw_gaussian(hm[cls_id], ct_int, rw, rh)
+
+                # -------------------- circle heatmap -------------------- #
+                radius = gaussian_radius((math.ceil(h), math.ceil(w)))
+                radius = max(0, int(radius))
+                radius = 6 if self.opt.mse_loss == 'mse' else radius
+                #radius = max(1, int(radius)) if self.opt.mse_loss else radius
+                draw_gaussian(hm[cls_id], ct_int, radius)
+
+                # -------------------- oval heatmap -------------------- #
+                # rw, rh = gaussian_radius_xy((math.ceil(h), math.ceil(w)), self.opt.alpha)
+                # rw = max(0, int(rw))
+                # rh = max(0, int(rh))
+                # draw_gaussian(hm[cls_id], ct_int, rw, rh)
 
                 box_target_inds = hm[cls_id] > 0
                 box_target[:, box_target_inds] = gt_box[:, None]
