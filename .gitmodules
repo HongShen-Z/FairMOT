@@ -1,0 +1,3 @@
+[submodule "src/TrackEval"]
+	path = src/TrackEval
+	url = git@github.com:HongShen-Z/TrackEval.git
