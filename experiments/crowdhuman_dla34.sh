@@ -10,7 +10,7 @@ source activate
 conda deactivate
 conda activate fair
 cd src
-python train.py mot --exp_id ch_dla34_gd_wh --gpus $CUDA_VISIBLE_DEVICES \
+python train.py mot --exp_id ch_dla34_gd_feiou --gpus $CUDA_VISIBLE_DEVICES \
 --batch_size 32 --load_model '../models/ctdet_coco_dla_2x.pth' --num_epochs 100 \
 --lr_step '50' --lr 2e-4 --data_cfg '../src/lib/cfg/crowdhuman.json' --dense_wh --wh_weight 1.0
 #python train.py mot --exp_id ch_res34_whe2 --gpus $CUDA_VISIBLE_DEVICES --arch 'resdcn_34' --resume \
