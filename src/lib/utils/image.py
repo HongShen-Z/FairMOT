@@ -142,7 +142,7 @@ def gaussian2D_xy(shape, sigma_x=1, sigma_y=1):
     return h
 
 
-def draw_oval_gaussian(heatmap, center, radius, k=1):
+def draw_umich_gaussian(heatmap, center, radius, k=1):
     diameter = 2 * radius + 1
     gaussian = gaussian2D((diameter, diameter), sigma=diameter / 6)
 
@@ -160,7 +160,7 @@ def draw_oval_gaussian(heatmap, center, radius, k=1):
     return heatmap
 
 
-def draw_umich_gaussian(heatmap, center, rw, rh, k=1):
+def draw_oval_gaussian(heatmap, center, rw, rh, k=1):
     diameter_w = 2 * rw + 1
     diameter_h = 2 * rh + 1
     gaussian = gaussian2D_xy((diameter_h, diameter_w), sigma_x=diameter_w/6, sigma_y=diameter_h/6)
