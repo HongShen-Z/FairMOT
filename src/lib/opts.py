@@ -67,6 +67,7 @@ class opts(object):
         self.parser.add_argument('--val_intervals', type=int, default=5, help='number of epochs to run validation.')
         self.parser.add_argument('--trainval', action='store_true',
                                  help='include validation in training and test on test set')
+        self.parser.add_argument('--hm_shape', default='circle', help='keypoint heatmaps shape: circle | oval')
         self.parser.add_argument('--alpha', type=float, default=0.25,
                                  help='heatmap generating coefficient to control sigma for gaussian kernel')
 

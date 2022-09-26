@@ -14,7 +14,7 @@ import copy
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms as T
 from cython_bbox import bbox_overlaps as bbox_ious
-from utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
+from utils.image import gaussian_radius, draw_oval_gaussian, draw_umich_gaussian, draw_msra_gaussian, gaussian_radius_xy
 from utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta, bbox_areas
 
 
@@ -436,14 +436,15 @@ class JointDataset(LoadImagesAndLabels):  # for training
         else:
             wh = np.zeros((self.max_objs, 2), dtype=np.float32)
         reg = np.zeros((self.max_objs, 2), dtype=np.float32)
-        ind = np.zeros((self.max_objs, ), dtype=np.int64)
-        reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
-        ids = np.zeros((self.max_objs, ), dtype=np.int64)
+        ind = np.zeros((self.max_objs,), dtype=np.int64)
+        reg_mask = np.zeros((self.max_objs,), dtype=np.uint8)
+        ids = np.zeros((self.max_objs,), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
         box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
         reg_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
 
-        draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_umich_gaussian
+        draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_oval_gaussian \
+            if self.opt.hm_shape == 'oval' else draw_umich_gaussian
         for k in range(min(num_objs, self.max_objs)):
             label = labels[k]
             bbox = label[2:]
@@ -484,18 +485,19 @@ class JointDataset(LoadImagesAndLabels):  # for training
                     [bbox[0], bbox[1]], dtype=np.float32)
                 ct_int = ct.astype(np.int32)
 
-                # -------------------- circle heatmap -------------------- #
-                radius = gaussian_radius((math.ceil(h), math.ceil(w)))
-                radius = max(0, int(radius))
-                radius = 6 if self.opt.mse_loss == 'mse' else radius
-                #radius = max(1, int(radius)) if self.opt.mse_loss else radius
-                draw_gaussian(hm[cls_id], ct_int, radius)
-
-                # -------------------- oval heatmap -------------------- #
-                # rw, rh = gaussian_radius_xy((math.ceil(h), math.ceil(w)), self.opt.alpha)
-                # rw = max(0, int(rw))
-                # rh = max(0, int(rh))
-                # draw_gaussian(hm[cls_id], ct_int, rw, rh)
+                if self.opt.hm_shape == 'circle':
+                    # -------------------- circle heatmap -------------------- #
+                    radius = gaussian_radius((math.ceil(h), math.ceil(w)))
+                    radius = max(0, int(radius))
+                    radius = 6 if self.opt.mse_loss == 'mse' else radius
+                    # radius = max(1, int(radius)) if self.opt.mse_loss else radius
+                    draw_gaussian(hm[cls_id], ct_int, radius)
+                else:
+                    # -------------------- oval heatmap -------------------- #
+                    rw, rh = gaussian_radius_xy((math.ceil(h), math.ceil(w)), self.opt.alpha)
+                    rw = max(0, int(rw))
+                    rh = max(0, int(rh))
+                    draw_gaussian(hm[cls_id], ct_int, rw, rh)
 
                 box_target_inds = hm[cls_id] > 0
                 box_target[:, box_target_inds] = gt_box[:, None]
@@ -593,5 +595,3 @@ class DetDataset(LoadImagesAndLabels):  # for training
                 labels[i, 1] += self.tid_start_index[ds]
 
         return imgs, labels0, img_path, (h, w)
-
-
