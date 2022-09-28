@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J train_oval
+#BSUB -J train_oval_grad
 #BSUB -o %J.out
 #BSUB -e %J.err
 #BSUB -q gpu_v100
@@ -10,7 +10,7 @@ source activate
 conda deactivate
 conda activate fair
 cd src
-python train.py mot --exp_id mix_mot17_half_oval --num_epochs 30 --lr_step '20' --multi_loss 'uncertainty' \
+python train.py mot --exp_id ablation_oval_grad --num_epochs 30 --lr_step '20' --multi_loss 'gradnorm' \
 --gpus $CUDA_VISIBLE_DEVICES --load_model '../models/ctdet_coco_dla_2x.pth' --hm_shape 'oval' \
 --data_cfg '../src/lib/cfg/data_half.json' --batch_size 48 --lr 2e-4
 cd ..
