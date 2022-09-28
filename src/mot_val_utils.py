@@ -2,7 +2,7 @@ import os.path as osp
 import numpy as np
 
 
-data_root = '~/datasets/MOT/data/gt/mot_challenge'  # the root directory of the dataset
+data_root = '/seu_share/home/dijunyong/220205723/datasets/MOT/data/gt/mot_challenge'  # root directory of the dataset
 gt_folder = osp.join(data_root, 'MOT17-train')
 seqs_str = '''MOT17-02-SDP
               MOT17-04-SDP
