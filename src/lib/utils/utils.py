@@ -7,6 +7,7 @@ import numpy as np
 import os
 import re
 import shutil
+import glob
 
 
 # # 为txt路径文件每行前加'MOT/'
@@ -32,6 +33,13 @@ import shutil
 #         newlines = [re.sub('data/', '', line, 1) for line in lines]
 #         with open(os.path.join('./src/data', ds), 'w') as f:
 #             f.writelines(newlines)
+
+# # 复制SDP结果添加另外两种结果
+# path = osp.join(os.getcwd(), '../demos/MOT17_ablation_base/data')
+# for file in glob.glob(path + '/*SDP.txt'):
+#     new = osp.basename(file).split('SDP')[0]
+#     shutil.copy(file, osp.join(path, new + 'DPM.txt'))
+#     shutil.copy(file, osp.join(path, new + 'FRCNN.txt'))
 
 def bbox_areas(bboxes, keep_axis=False):
     x_min, y_min, x_max, y_max = bboxes[0], bboxes[1], bboxes[2], bboxes[3]

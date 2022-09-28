@@ -11,9 +11,9 @@ conda deactivate
 conda activate fair
 #python track_half.py mot --val_mot17 True --load_model ../exp/mix_mot17_half_base/models/model_last.pth \
 #--conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_ablation_base
-python mot_val_utils.py
 python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_ablation_base' --BENCHMARK 'MOT17' \
 --METRICS 'HOTA' 'CLEAR' 'Identity' --SKIP_SPLIT_FOL True --USE_PARALLEL True --NUM_PARALLEL_CORES 2 \
+--GT_LOC_FORMAT {gt_folder}/{seq}/gt/gt_val_half.txt \
 --TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos' \
 --GT_FOLDER '/seu_share/home/dijunyong/220205723/datasets/MOT/data/gt/mot_challenge/'
 #python track.py mot --val_mot20 True --load_model ../exp/mot/ch_dla34_gd0.5/models/model_60.pth --conf_thres 0.3 \
