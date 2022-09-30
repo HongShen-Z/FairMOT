@@ -10,7 +10,7 @@ source activate
 conda deactivate
 conda activate fair
 cd src
-python train.py mot --exp_id ablation_oval_feiou_uncer --num_epochs 30 --lr_step '20' --multi_loss 'uncertainty' \
+python train.py mot --exp_id ablation_oval_feiou_grad --num_epochs 30 --lr_step '20' --multi_loss 'gradnorm' \
 --gpus $CUDA_VISIBLE_DEVICES --load_model '../models/ctdet_coco_dla_2x.pth' --hm_shape 'oval' \
 --dense_wh --wh_weight 1.0 \
 --data_cfg '../src/lib/cfg/data_half.json' --batch_size 48 --lr 2e-4

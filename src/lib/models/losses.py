@@ -200,9 +200,10 @@ class GiouLoss(nn.Module):
         # Focal-EIOU
         eiou = torch.mean((1 - iou + diou_term + eiou_term) * iou_weight)
         # print(eiou)
-        focal_eiou = torch.mean(iou ** 0.5 * eiou)
+        # focal_eiou有问题，loss是nan
+        # focal_eiou = torch.mean(iou ** 0.5 * eiou)
         # print(focal_eiou)
-        return focal_eiou
+        return eiou
 
     # def forward(self, preds, weight, bbox, eps=1e-7, reduction='mean'):
     #     """
