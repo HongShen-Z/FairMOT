@@ -512,8 +512,9 @@ class DLASeg(nn.Module):
         for head in self.heads:
             z[head] = self.__getattr__(head)(D[-1])
             # --------------------dev-------------------- #
-            # if 'wh' in head:
-            #     z[head] = F.relu(z[head]) * 16.
+            if 'wh' in head:
+                z[head] *= 16.
+                # z[head] = F.relu(z[head]) * 16.
         # for head in self.reid_heads:
         #     z[head] = self.__getattr__(head)(R)
 
