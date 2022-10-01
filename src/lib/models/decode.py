@@ -72,15 +72,15 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     clses = clses.view(batch, K, 1).float()
     scores = scores.view(batch, K, 1)
     if ltrb:
-        bboxes = torch.cat([xs - wh[..., 0:1],
-                            ys - wh[..., 1:2],
-                            xs + wh[..., 2:3],
-                            ys + wh[..., 3:4]], dim=2)
+        # bboxes = torch.cat([xs - wh[..., 0:1],
+        #                     ys - wh[..., 1:2],
+        #                     xs + wh[..., 2:3],
+        #                     ys + wh[..., 3:4]], dim=2)
         # ----------------dev---------------- #
-        # bboxes = torch.cat([xs - wh[..., 0:1] / 4,
-        #                     ys - wh[..., 1:2] / 4,
-        #                     xs + wh[..., 2:3] / 4,
-        #                     ys + wh[..., 3:4] / 4], dim=2)
+        bboxes = torch.cat([xs - wh[..., 0:1] / 4,
+                            ys - wh[..., 1:2] / 4,
+                            xs + wh[..., 2:3] / 4,
+                            ys + wh[..., 3:4] / 4], dim=2)
         # box_indx1, box_indy1 = xs - wh[..., 0:1], ys - wh[..., 1:2]
         # box_indx2, box_indy2 = xs + wh[..., 2:3], ys + wh[..., 3:4]
     else:
