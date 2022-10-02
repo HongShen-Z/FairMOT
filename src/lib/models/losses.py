@@ -405,7 +405,7 @@ class GiouLoss(nn.Module):
         iou_distances = 1 - gious
 
         np.set_printoptions(threshold=np.inf)
-        print(weight.cpu().numpy(), weight.shape)
+        print(weight.shape)
 
         print('#' * 100)
         print(iou_distances.cpu().detach().numpy(), iou_distances.shape)
