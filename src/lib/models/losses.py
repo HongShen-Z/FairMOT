@@ -408,7 +408,7 @@ class GiouLoss(nn.Module):
         print(weight.cpu().numpy(), weight.shape)
 
         print('#' * 100)
-        print(iou_distances.cpu().numpy(), iou_distances.shape)
+        print(iou_distances.cpu().detach().numpy(), iou_distances.shape)
         # return torch.sum(iou_distances) / avg_factor
         return torch.sum(iou_distances * weight)[None] / avg_factor
 
