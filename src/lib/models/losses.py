@@ -377,8 +377,8 @@ class GiouLoss(nn.Module):
               target (batch x max_objects x dim)
         """
         pos_mask = weight > 0
-        weight = weight[pos_mask]
-        avg_factor = weight.sum() + eps
+        # weight = weight[pos_mask]
+        # avg_factor = weight.sum() + eps
         # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         bboxes1 = pred[pos_mask].view(-1, 4)
         bboxes2 = target[pos_mask].view(-1, 4)
@@ -404,11 +404,10 @@ class GiouLoss(nn.Module):
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
 
-        # np.set_printoptions(threshold=np.inf)
+        np.set_printoptions(threshold=np.inf)
         # print(weight.shape)
-        #
-        # print('#' * 100)
-        # print(iou_distances.cpu().detach().numpy(), iou_distances.shape)
+        print('#' * 100)
+        print(iou_distances.cpu().detach().numpy()[-1], iou_distances.shape)
         return torch.mean(iou_distances)
         # return torch.sum(iou_distances * weight)[None] / avg_factor
 
