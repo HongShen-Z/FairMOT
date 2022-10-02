@@ -452,6 +452,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
             gt_box = copy.deepcopy(bbox)
             gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
             gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
+            gt_box[0] = np.clip(gt_box[0], 0, imgs.shape[2] - 1)
+            gt_box[1] = np.clip(gt_box[1], 0, imgs.shape[1] - 1)
             gt_box[0] = gt_box[0] - gt_box[2] / 2
             gt_box[1] = gt_box[1] - gt_box[3] / 2
             gt_box[2] = gt_box[0] + gt_box[2]
