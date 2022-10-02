@@ -376,9 +376,9 @@ class GiouLoss(nn.Module):
               ind (batch x max_objects)
               target (batch x max_objects x dim)
         """
-        avg_factor = weight.sum() + eps
         pos_mask = weight > 0
-        # weight = weight[pos_mask].float()
+        weight = weight[pos_mask]
+        avg_factor = weight.sum() + eps
         # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         bboxes1 = pred[pos_mask].view(-1, 4)
         bboxes2 = target[pos_mask].view(-1, 4)
