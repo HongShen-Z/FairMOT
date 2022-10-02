@@ -16,7 +16,6 @@ from ..models.utils import _sigmoid, _tranpose_and_gather_feat
 from ..utils.post_process import ctdet_post_process
 from .base_trainer import BaseTrainer
 from .grad_norm import call_gradnorm
-from collections import deque
 
 
 class MotLoss(torch.nn.Module):
@@ -44,7 +43,6 @@ class MotLoss(torch.nn.Module):
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
         self.s_id = nn.Parameter(-1.05 * torch.ones(1))
         self.share_w = share_w
-        self.test = deque(maxlen=2)
 
     def forward(self, outputs, batch):
         opt = self.opt
@@ -57,13 +55,13 @@ class MotLoss(torch.nn.Module):
             if opt.dense_wh:
                 H, W = outputs['hm'].shape[2:]
                 mask = batch['box_weight'].view(-1, H, W)
-                base_step = opt.down_ratio
-                shifts_x = torch.arange(0, (W - 1) * base_step + 1, base_step,
-                                        dtype=torch.float32, device=batch['hm'].device)
-                shifts_y = torch.arange(0, (H - 1) * base_step + 1, base_step,
-                                        dtype=torch.float32, device=batch['hm'].device)
-                # shifts_x = torch.arange(0, W, dtype=torch.float32, device=batch['hm'].device)
-                # shifts_y = torch.arange(0, H, dtype=torch.float32, device=batch['hm'].device)
+                # base_step = opt.down_ratio
+                # shifts_x = torch.arange(0, (W - 1) * base_step + 1, base_step,
+                #                         dtype=torch.float32, device=batch['hm'].device)
+                # shifts_y = torch.arange(0, (H - 1) * base_step + 1, base_step,
+                #                         dtype=torch.float32, device=batch['hm'].device)
+                shifts_x = torch.arange(0, W, dtype=torch.float32, device=batch['hm'].device)
+                shifts_y = torch.arange(0, H, dtype=torch.float32, device=batch['hm'].device)
                 shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
                 base_loc = torch.stack((shift_x, shift_y), dim=0)  # (2, h, w)
                 # (batch, h, w, 4)
@@ -71,11 +69,6 @@ class MotLoss(torch.nn.Module):
                                         base_loc + outputs['wh'][:, [2, 3]]), dim=1).permute(0, 2, 3, 1)
                 # (batch, h, w, 4)
                 boxes = batch['box_target'].permute(0, 2, 3, 1)
-                self.test.append(boxes)
-                if boxes == self.test[0]:
-                    print('True')
-                else:
-                    print('False')
                 wh_loss += self.crit_wh(pred_boxes, mask, boxes)
             else:
                 wh_loss += self.crit_wh(
