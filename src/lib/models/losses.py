@@ -404,13 +404,13 @@ class GiouLoss(nn.Module):
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
 
-        np.set_printoptions(threshold=np.inf)
-        print(weight.shape)
-
-        print('#' * 100)
-        print(iou_distances.cpu().detach().numpy(), iou_distances.shape)
-        # return torch.sum(iou_distances) / avg_factor
-        return torch.sum(iou_distances * weight)[None] / avg_factor
+        # np.set_printoptions(threshold=np.inf)
+        # print(weight.shape)
+        #
+        # print('#' * 100)
+        # print(iou_distances.cpu().detach().numpy(), iou_distances.shape)
+        return torch.mean(iou_distances)
+        # return torch.sum(iou_distances * weight)[None] / avg_factor
 
 
 class RegLoss(nn.Module):
