@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 from .utils import _tranpose_and_gather_feat
 import torch.nn.functional as F
+import numpy as np
 
 
 def _slow_neg_loss(pred, gt):
@@ -402,8 +403,12 @@ class GiouLoss(nn.Module):
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
+
+        np.set_printoptions(threshold=np.inf)
+        print(weight.numpy(), weight.shape)
+
         print('#' * 100)
-        print(iou_distances)
+        print(iou_distances.numpy(), iou_distances.shape)
         # return torch.sum(iou_distances) / avg_factor
         return torch.sum(iou_distances * weight)[None] / avg_factor
 

@@ -507,9 +507,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 # reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
                 reg_weight[cls_id, box_target_inds] = hm[cls_id][box_target_inds]
 
-                np.set_printoptions(threshold=np.inf)
-                print(reg_weight)
-
                 if self.opt.ltrb:
                     wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
                             bbox_amodal[2] - ct[0], bbox_amodal[3] - ct[1]
