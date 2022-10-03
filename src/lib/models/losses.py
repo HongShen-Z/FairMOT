@@ -403,12 +403,13 @@ class GiouLoss(nn.Module):
         u = ap + ag - overlap
         gious = ious - (enclose_area - u) / enclose_area
         iou_distances = 1 - gious
+        iou_distances = torch.mean(iou_distances)
 
         np.set_printoptions(threshold=np.inf)
         # print(weight.shape)
         print('#' * 100)
-        print(iou_distances.cpu().detach().numpy()[-1], iou_distances.shape)
-        return torch.mean(iou_distances)
+        print(iou_distances.cpu().detach().numpy(), iou_distances.shape)
+        return iou_distances
         # return torch.sum(iou_distances * weight)[None] / avg_factor
 
 
