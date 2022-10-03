@@ -142,10 +142,10 @@ class GiouLoss(nn.Module):
         # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
         preds = preds[pos_mask].view(-1, 4)
         bbox = bbox[pos_mask].view(-1, 4)
-        # print('#' * 100)
-        # print(preds[-3:])
-        # print('-' * 100)
-        # print(bbox[-3:])
+        print('#' * 100)
+        print(preds[-3:])
+        print('-' * 100)
+        print(bbox[-3:])
 
         ix1 = torch.max(preds[:, 0], bbox[:, 0])
         iy1 = torch.max(preds[:, 1], bbox[:, 1])
