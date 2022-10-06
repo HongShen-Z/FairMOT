@@ -439,9 +439,9 @@ class JointDataset(LoadImagesAndLabels):  # for training
         ind = np.zeros((self.max_objs,), dtype=np.int64)
         reg_mask = np.zeros((self.max_objs,), dtype=np.uint8)
         ids = np.zeros((self.max_objs,), dtype=np.int64)
-        bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
-        box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
-        box_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
+        # bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
+        # box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
+        # box_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_oval_gaussian \
             if self.opt.hm_shape == 'oval' else draw_umich_gaussian
@@ -449,21 +449,21 @@ class JointDataset(LoadImagesAndLabels):  # for training
             label = labels[k]
             bbox = label[2:]
 
-            gt_box = copy.deepcopy(bbox)
-            # gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
-            # gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
-            gt_box[[0, 2]] = gt_box[[0, 2]] * output_w
-            gt_box[[1, 3]] = gt_box[[1, 3]] * output_h
-            gt_box[0] = np.clip(gt_box[0], 0, output_w - 1)
-            gt_box[1] = np.clip(gt_box[1], 0, output_h - 1)
-            gt_box[0] = gt_box[0] - gt_box[2] / 2
-            gt_box[1] = gt_box[1] - gt_box[3] / 2
-            gt_box[2] = gt_box[0] + gt_box[2]
-            gt_box[3] = gt_box[1] + gt_box[3]
-            # if self.wh_area_process:
-            #     box_area_log = np.log(bbox_areas(gt_box))
-            # else:
-            #     box_area_log = bbox_areas(gt_box)
+            # gt_box = copy.deepcopy(bbox)
+            # # gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
+            # # gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
+            # gt_box[[0, 2]] = gt_box[[0, 2]] * output_w
+            # gt_box[[1, 3]] = gt_box[[1, 3]] * output_h
+            # gt_box[0] = np.clip(gt_box[0], 0, output_w - 1)
+            # gt_box[1] = np.clip(gt_box[1], 0, output_h - 1)
+            # gt_box[0] = gt_box[0] - gt_box[2] / 2
+            # gt_box[1] = gt_box[1] - gt_box[3] / 2
+            # gt_box[2] = gt_box[0] + gt_box[2]
+            # gt_box[3] = gt_box[1] + gt_box[3]
+            # # if self.wh_area_process:
+            # #     box_area_log = np.log(bbox_areas(gt_box))
+            # # else:
+            # #     box_area_log = bbox_areas(gt_box)
 
             cls_id = int(label[0])
             bbox[[0, 2]] = bbox[[0, 2]] * output_w
@@ -503,13 +503,13 @@ class JointDataset(LoadImagesAndLabels):  # for training
                     rh = max(0, int(rh))
                     draw_gaussian(hm[cls_id], ct_int, rw, rh)
 
-                box_target_inds = hm[cls_id] > 0
-                box_target[:, box_target_inds] = gt_box[:, None]
-                # local_heatmap = hm[cls_id][box_target_inds]
-                # ct_div = local_heatmap.sum()
-                # local_heatmap *= box_area_log
-                # reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
-                box_weight[cls_id, box_target_inds] = hm[cls_id][box_target_inds]
+                # box_target_inds = hm[cls_id] > 0
+                # box_target[:, box_target_inds] = gt_box[:, None]
+                # # local_heatmap = hm[cls_id][box_target_inds]
+                # # ct_div = local_heatmap.sum()
+                # # local_heatmap *= box_area_log
+                # # reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
+                # box_weight[cls_id, box_target_inds] = hm[cls_id][box_target_inds]
 
                 if self.opt.ltrb:
                     wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
@@ -520,10 +520,11 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 reg[k] = ct - ct_int
                 reg_mask[k] = 1
                 ids[k] = label[1]
-                bbox_xys[k] = bbox_xy
-
-        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
-               'reg': reg, 'ids': ids, 'bbox': bbox_xys, 'box_target': box_target, 'box_weight': box_weight}
+        #         bbox_xys[k] = bbox_xy
+        #
+        # ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
+        #        'reg': reg, 'ids': ids, 'bbox': bbox_xys, 'box_target': box_target, 'box_weight': box_weight}
+        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg, 'ids': ids}
         return ret
 
 
