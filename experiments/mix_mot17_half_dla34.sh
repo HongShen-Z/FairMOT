@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J eiou
+#BSUB -J reidup
 #BSUB -o %J.out
 #BSUB -e %J.err
 #BSUB -q gpu_v100
