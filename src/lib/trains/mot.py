@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from fvcore.nn import sigmoid_focal_loss_jit
 
 from ..models.losses import FocalLoss, VarifocalLoss, TripletLoss
-from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, GiouLoss
+from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, GiouLoss, bbox_iou
 from ..models.decode import mot_decode
 from ..models.utils import _sigmoid, _tranpose_and_gather_feat
 from ..utils.post_process import ctdet_post_process
