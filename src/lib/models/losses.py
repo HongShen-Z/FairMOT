@@ -129,8 +129,7 @@ class FocalLoss(nn.Module):
 
 def bbox_iou(box1, mask, box2, x1y1x2y2=True, GIoU=True, DIoU=False, CIoU=False,  EIoU=False, eps=1e-7):
     # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
-    pos_mask = mask > 0.9
-    # avg_factor = torch.sum(pos_mask).float().item() + 1e-4
+    pos_mask = (mask == 1)
     box1 = box1[pos_mask].view(-1, 4)
     box2 = box2[pos_mask].view(-1, 4)
 
@@ -164,23 +163,23 @@ def bbox_iou(box1, mask, box2, x1y1x2y2=True, GIoU=True, DIoU=False, CIoU=False,
             rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
                     (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
             if DIoU:
-                return iou - rho2 / c2  # DIoU
+                return torch.mean(1 - iou + rho2 / c2)  # DIoU
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
                 v = (4 / torch.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)  # CIoU
+                return torch.mean(1 - iou + (rho2 / c2 + v * alpha))  # CIoU
             elif EIoU:
                 rho_w2 = ((b2_x2 - b2_x1) - (b1_x2 - b1_x1)) ** 2
                 rho_h2 = ((b2_y2 - b2_y1) - (b1_y2 - b1_y1)) ** 2
                 cw2 = cw ** 2 + eps
                 ch2 = ch ** 2 + eps
-                return iou - (rho2 / c2 + rho_w2 / cw2 + rho_h2 / ch2)
+                return torch.mean(1 - iou + (rho2 / c2 + rho_w2 / cw2 + rho_h2 / ch2))
         else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
             c_area = cw * ch + eps  # convex area
-            return iou - (c_area - union) / c_area  # GIoU
+            return torch.mean(1 - iou + (c_area - union) / c_area)  # GIoU
     else:
-        return iou  # IoU
+        return torch.mean(1 - iou)  # IoU
 
 
 class GiouLoss(nn.Module):

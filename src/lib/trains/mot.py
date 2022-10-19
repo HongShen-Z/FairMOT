@@ -28,7 +28,7 @@ class MotLoss(torch.nn.Module):
         # self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
         #     NormRegL1Loss() if opt.norm_wh else \
         #     RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
-        self.crit_wh = GiouLoss() if opt.dense_wh else self.crit_reg
+        self.crit_wh = bbox_iou if opt.dense_wh else self.crit_reg
         self.opt = opt
         self.emb_dim = opt.reid_dim
         self.nID = opt.nID
