@@ -127,7 +127,7 @@ class FocalLoss(nn.Module):
         return self.neg_loss(out, target)
 
 
-def bbox_iou(box1, mask, box2, x1y1x2y2=True, GIoU=True, DIoU=False, CIoU=False,  EIoU=False, eps=1e-7):
+def bbox_iou(box1, mask, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, EIoU=True, eps=1e-7):
     # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
     pos_mask = (mask == 1)
     box1 = box1[pos_mask].view(-1, 4)
