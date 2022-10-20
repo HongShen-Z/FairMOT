@@ -133,6 +133,11 @@ def bbox_iou(box1, mask, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=True,
     box1 = box1[pos_mask].view(-1, 4)
     box2 = box2[pos_mask].view(-1, 4)
 
+    print('#' * 100)
+    print(box1[-1, :])
+    print('-' * 100)
+    print(box2[-1, :])
+
     # box2 = box2.T
 
     # Get the coordinates of bounding boxes
