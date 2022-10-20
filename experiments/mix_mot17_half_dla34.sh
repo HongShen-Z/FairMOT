@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J giou
+#BSUB -J ciou
 #BSUB -o %J.out
 #BSUB -e %J.err
 #BSUB -q gpu_v100
