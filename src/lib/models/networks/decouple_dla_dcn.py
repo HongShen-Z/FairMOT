@@ -430,8 +430,7 @@ class ReidUp(nn.Module):
         self.up = nn.ConvTranspose2d(out_channel, out_channel, up_radio * 2, stride=up_radio, padding=up_radio // 2,
                                      output_padding=0,
                                      groups=out_channel, bias=False)
-        self.Conv = nn.Conv2d(out_channel, 1,
-                              kernel_size=1, stride=1, bias=False)
+        self.Conv = nn.Conv2d(out_channel, 1, kernel_size=1, stride=1, bias=False)
         # self.actf = nn.Sequential(
         #     nn.BatchNorm2d(cho, momentum=BN_MOMENTUM),
         #     nn.ReLU(inplace=True)
@@ -463,13 +462,13 @@ class DLASeg(nn.Module):
         self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
                             [2 ** i for i in range(self.last_level - self.first_level)])
 
-        # self.SA_3 = ReidUp(channels[-1], channels[-2], 2)
-        # self.SA_2 = ReidUp(channels[-2], channels[-3], 2)
-        # self.SA_1 = ReidUp(channels[-3], channels[-4], 2)
+        self.SA_3 = ReidUp(channels[-1], channels[-2], 2)
+        self.SA_2 = ReidUp(channels[-2], channels[-3], 2)
+        self.SA_1 = ReidUp(channels[-3], channels[-4], 2)
 
         self.heads = heads
-        # self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
-        # self.reid_heads = dict([('id', heads['id'])])
+        self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
+        self.reid_heads = dict([('id', heads['id'])])
         for head in self.heads:
             classes = self.heads[head]
             if head_conv > 0:
@@ -507,19 +506,19 @@ class DLASeg(nn.Module):
             D.append(x[i].clone())
         self.ida_up(D, 0, len(D))
 
-        # att_3 = self.SA_3(x[3])
-        # att_2 = self.SA_2(x[2] * att_3)
-        # att_1 = self.SA_1(x[1] * att_2)
-        # R = x[0] * att_1
+        att_3 = self.SA_3(x[3])
+        att_2 = self.SA_2(x[2] * att_3)
+        att_1 = self.SA_1(x[1] * att_2)
+        R = x[0] * att_1
 
         z = {}
-        for head in self.heads:
+        for head in self.det_heads:
             z[head] = self.__getattr__(head)(D[-1])
             # --------------------dev-------------------- #
-            if 'wh' in head:
-                z[head] = F.relu(z[head])
-        # for head in self.reid_heads:
-        #     z[head] = self.__getattr__(head)(R)
+            # if 'wh' in head:
+            #     z[head] = F.relu(z[head])
+        for head in self.reid_heads:
+            z[head] = self.__getattr__(head)(R)
 
         return z
 
