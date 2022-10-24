@@ -501,10 +501,10 @@ class DLASeg(nn.Module):
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        D = []
-        for i in range(self.last_level - self.first_level):
-            D.append(x[i].clone())
-        self.ida_up(D, 0, len(D))
+        # D = []
+        # for i in range(self.last_level - self.first_level):
+        #     D.append(x[i].clone())
+        # self.ida_up(D, 0, len(D))
 
         att_3 = self.SA_3(x[3])
         att_2 = self.SA_2(x[2] * att_3)
@@ -513,7 +513,8 @@ class DLASeg(nn.Module):
 
         z = {}
         for head in self.det_heads:
-            z[head] = self.__getattr__(head)(D[-1])
+            # z[head] = self.__getattr__(head)(D[-1])
+            z[head] = self.__getattr__(head)(R)
             # --------------------dev-------------------- #
             # if 'wh' in head:
             #     z[head] = F.relu(z[head])
