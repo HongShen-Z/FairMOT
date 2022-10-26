@@ -465,8 +465,8 @@ class DLASeg(nn.Module):
         if out_channel == 0:
             out_channel = channels[self.first_level]
 
-        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-                            [2 ** i for i in range(self.last_level - self.first_level)])
+        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+        #                     [2 ** i for i in range(self.last_level - self.first_level)])
 
         self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
         self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
