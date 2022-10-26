@@ -465,15 +465,15 @@ class DLASeg(nn.Module):
         if out_channel == 0:
             out_channel = channels[self.first_level]
 
-        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-        #                     [2 ** i for i in range(self.last_level - self.first_level)])
+        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+                            [2 ** i for i in range(self.last_level - self.first_level)])
 
         self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
         self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
         self.RA_1 = ReidUp(channels[-3], channels[-4], 2)
-        self.DA_3 = ReidUp(channels[-1], channels[-2], 2)
-        self.DA_2 = ReidUp(channels[-2], channels[-3], 2)
-        self.DA_1 = ReidUp(channels[-3], channels[-4], 2)
+        # self.DA_3 = ReidUp(channels[-1], channels[-2], 2)
+        # self.DA_2 = ReidUp(channels[-2], channels[-3], 2)
+        # self.DA_1 = ReidUp(channels[-3], channels[-4], 2)
 
         self.heads = heads
         self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
@@ -510,15 +510,15 @@ class DLASeg(nn.Module):
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        # D = []
-        # for i in range(self.last_level - self.first_level):
-        #     D.append(x[i].clone())
-        # self.ida_up(D, 0, len(D))
+        D = []
+        for i in range(self.last_level - self.first_level):
+            D.append(x[i].clone())
+        self.ida_up(D, 0, len(D))
 
-        det_att = self.DA_3(x[3])
-        det_att = self.DA_2(x[2] * det_att)
-        det_att = self.DA_1(x[1] * det_att)
-        D = x[0] * det_att
+        # det_att = self.DA_3(x[3])
+        # det_att = self.DA_2(x[2] * det_att)
+        # det_att = self.DA_1(x[1] * det_att)
+        # D = x[0] * det_att
 
         reid_att = self.RA_3(x[3])
         reid_att = self.RA_2(x[2] * reid_att)
@@ -527,8 +527,8 @@ class DLASeg(nn.Module):
 
         z = {}
         for head in self.det_heads:
-            # z[head] = self.__getattr__(head)(D[-1])
-            z[head] = self.__getattr__(head)(D)
+            z[head] = self.__getattr__(head)(D[-1])
+            # z[head] = self.__getattr__(head)(D)
             # --------------------dev-------------------- #
             # if 'wh' in head:
             #     z[head] = F.relu(z[head])

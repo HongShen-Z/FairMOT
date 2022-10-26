@@ -100,10 +100,10 @@ def main(opt):
 
 if __name__ == '__main__':
     opt = opts().parse()
-    # main(opt)
-    heads = {'hm': 1,
-             'wh': 4,
-             'id': 128,
-             'reg': 2}
-    model = create_model('dla_34', heads, 256)
-    print(model.dla_up.ida_2)
+    main(opt)
+    # heads = {'hm': 1,
+    #          'wh': 4,
+    #          'id': 128,
+    #          'reg': 2}
+    # model = create_model('dla_34', heads, 256)
+    # print(model.dla_up.ida_2)
