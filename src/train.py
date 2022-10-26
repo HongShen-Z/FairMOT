@@ -39,8 +39,6 @@ def main(opt):
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
-    print(model)
-    return
 
     optimizer = torch.optim.Adam(model.parameters(), opt.lr)
     # optimizer = torch.optim.SGD(model.parameters(), opt.lr, momentum=0.9, weight_decay=0.0004)
@@ -102,4 +100,10 @@ def main(opt):
 
 if __name__ == '__main__':
     opt = opts().parse()
-    main(opt)
+    # main(opt)
+    heads = {'hm': opt.num_classes,
+             'wh': 2 if not opt.ltrb else 4,
+             'id': opt.reid_dim,
+             'reg': 2}
+    model = create_model('dla_34', heads, 256)
+    print(model)
