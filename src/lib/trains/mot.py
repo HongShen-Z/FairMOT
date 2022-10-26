@@ -115,9 +115,9 @@ class MotTrainer(BaseTrainer):
     def __init__(self, opt, model, optimizer=None):
         super(MotTrainer, self).__init__(opt, model, optimizer=optimizer)
 
-    def _get_losses(self, opt, model):
+    def _get_losses(self, opt, share_w):
         loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
-        loss = MotLoss(opt, model)
+        loss = MotLoss(opt, share_w)
         return loss_states, loss
 
     def save_result(self, output, batch, results):

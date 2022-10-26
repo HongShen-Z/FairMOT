@@ -100,4 +100,6 @@ def main(opt):
 
 if __name__ == '__main__':
     opt = opts().parse()
-    main(opt)
+    # main(opt)
+    model = create_model(opt.arch, opt.heads, opt.head_conv)
+    print(model)
