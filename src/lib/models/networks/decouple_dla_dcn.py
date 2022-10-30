@@ -468,16 +468,16 @@ class DLASeg(nn.Module):
         self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
                             [2 ** i for i in range(self.last_level - self.first_level)])
 
-        self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
-        self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
-        self.RA_1 = ReidUp(channels[-3], channels[-4], 2)
+        # self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
+        # self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
+        # self.RA_1 = ReidUp(channels[-3], channels[-4], 2)
         # self.DA_3 = ReidUp(channels[-1], channels[-2], 2)
         # self.DA_2 = ReidUp(channels[-2], channels[-3], 2)
         # self.DA_1 = ReidUp(channels[-3], channels[-4], 2)
 
         self.heads = heads
-        self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
-        self.reid_heads = dict([('id', heads['id'])])
+        # self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
+        # self.reid_heads = dict([('id', heads['id'])])
         for head in self.heads:
             classes = self.heads[head]
             if head_conv > 0:
@@ -520,20 +520,20 @@ class DLASeg(nn.Module):
         # det_att = self.DA_1(x[1] * det_att)
         # D = x[0] * det_att
 
-        reid_att = self.RA_3(x[3])
-        reid_att = self.RA_2(x[2] * reid_att)
-        reid_att = self.RA_1(x[1] * reid_att)
-        R = x[0] * reid_att
+        # reid_att = self.RA_3(x[3])
+        # reid_att = self.RA_2(x[2] * reid_att)
+        # reid_att = self.RA_1(x[1] * reid_att)
+        # R = x[0] * reid_att
 
         z = {}
-        for head in self.det_heads:
+        for head in self.heads:
             z[head] = self.__getattr__(head)(D[-1])
             # z[head] = self.__getattr__(head)(D)
             # --------------------dev-------------------- #
             # if 'wh' in head:
             #     z[head] = F.relu(z[head])
-        for head in self.reid_heads:
-            z[head] = self.__getattr__(head)(R)
+        # for head in self.reid_heads:
+        #     z[head] = self.__getattr__(head)(R)
 
         return z
 
