@@ -50,8 +50,8 @@ def main(opt):
     # optimizer = torch.optim.RAdam(model_params, opt.lr)
     # -----------------dev----------------- #
 
-    # optimizer = torch.optim.Adam(model.parameters(), opt.lr)
-    optimizer = torch.optim.SGD(model_params, opt.lr, momentum=0.9, weight_decay=0.0004)
+    optimizer = torch.optim.Adam(model.parameters(), opt.lr)
+    # optimizer = torch.optim.SGD(model_params, opt.lr, momentum=0.9, weight_decay=0.0004)
     start_epoch = 0
 
     # Get dataloader
@@ -75,12 +75,12 @@ def main(opt):
 
     trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
 
-    lrs = get_cosine_schedule_with_warmup(opt.lr, 10, opt.num_epochs)
+    # lrs = get_cosine_schedule_with_warmup(opt.lr, 10, opt.num_epochs)
 
     for epoch in range(start_epoch + 1, opt.num_epochs + 1):
         mark = epoch if opt.save_all else 'last'
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lrs[epoch]
+        # for param_group in optimizer.param_groups:
+        #     param_group['lr'] = lrs[epoch]
         print('epoch: {}, lr: {}'.format(epoch, optimizer.param_groups[0]['lr']))
         log_dict_train, _ = trainer.train(epoch, train_loader)
         logger.write('epoch: {} |'.format(epoch))
@@ -95,13 +95,13 @@ def main(opt):
             save_model(os.path.join(opt.save_dir, 'models', 'model_last.pth'),
                        epoch, model, optimizer, opt.tasks)
         logger.write('\n')
-        # if epoch in opt.lr_step:
-        #     save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
-        #                epoch, model, optimizer, opt.tasks)
-        #     lr = opt.lr * (0.1 ** (opt.lr_step.index(epoch) + 1))
-        #     print('Drop LR to', lr)
-        #     for param_group in optimizer.param_groups:
-        #         param_group['lr'] = lr
+        if epoch in opt.lr_step:
+            save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
+                       epoch, model, optimizer, opt.tasks)
+            lr = opt.lr * (0.1 ** (opt.lr_step.index(epoch) + 1))
+            print('Drop LR to', lr)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
         if epoch % 5 == 0 or epoch >= opt.num_epochs - 5:
             save_model(os.path.join(opt.save_dir, 'models', 'model_{}.pth'.format(epoch)),
                        epoch, model, optimizer, opt.tasks)

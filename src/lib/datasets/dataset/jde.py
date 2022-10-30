@@ -440,21 +440,21 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
-        box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
-        reg_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
+        # box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
+        # reg_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_umich_gaussian
         for k in range(min(num_objs, self.max_objs)):
             label = labels[k]
             bbox = label[2:]
 
-            gt_box = copy.deepcopy(bbox)
-            gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
-            gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
-            gt_box[0] = gt_box[0] - gt_box[2] / 2
-            gt_box[1] = gt_box[1] - gt_box[3] / 2
-            gt_box[2] = gt_box[0] + gt_box[2]
-            gt_box[3] = gt_box[1] + gt_box[3]
+            # gt_box = copy.deepcopy(bbox)
+            # gt_box[[0, 2]] = gt_box[[0, 2]] * imgs.shape[2]
+            # gt_box[[1, 3]] = gt_box[[1, 3]] * imgs.shape[1]
+            # gt_box[0] = gt_box[0] - gt_box[2] / 2
+            # gt_box[1] = gt_box[1] - gt_box[3] / 2
+            # gt_box[2] = gt_box[0] + gt_box[2]
+            # gt_box[3] = gt_box[1] + gt_box[3]
             # if self.wh_area_process:
             #     box_area_log = np.log(bbox_areas(gt_box))
             # else:
@@ -494,13 +494,13 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 # draw_gaussian(hm[cls_id], ct_int, radius)
                 draw_gaussian(hm[cls_id], ct_int, rw, rh)
 
-                box_target_inds = hm[cls_id] > 0
-                box_target[:, box_target_inds] = gt_box[:, None]
+                # box_target_inds = hm[cls_id] > 0
+                # box_target[:, box_target_inds] = gt_box[:, None]
                 # local_heatmap = hm[cls_id][box_target_inds]
                 # ct_div = local_heatmap.sum()
                 # local_heatmap *= box_area_log
                 # reg_weight[cls_id, box_target_inds] = local_heatmap / ct_div
-                reg_weight[cls_id, box_target_inds] = hm[cls_id][box_target_inds]
+                # reg_weight[cls_id, box_target_inds] = hm[cls_id][box_target_inds]
 
                 if self.opt.ltrb:
                     wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
@@ -513,8 +513,10 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 ids[k] = label[1]
                 bbox_xys[k] = bbox_xy
 
+        # ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
+        #        'reg': reg, 'ids': ids, 'bbox': bbox_xys, 'box_target': box_target, 'box_weight': reg_weight}
         ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh,
-               'reg': reg, 'ids': ids, 'bbox': bbox_xys, 'box_target': box_target, 'box_weight': reg_weight}
+               'reg': reg, 'ids': ids, 'bbox': bbox_xys}
         return ret
 
 
