@@ -46,12 +46,13 @@ def main(opt):
     model_params = []
     for m in model:
         model_params += model[m].parameters()
-    # optimizer = torch.optim.Adam(model_params, opt.lr)
+    optimizer = torch.optim.Adam(model_params, opt.lr)
     # optimizer = torch.optim.RAdam(model_params, opt.lr)
+    # optimizer = torch.optim.SGD(model_params, opt.lr, momentum=0.9, weight_decay=0.0004)
     # -----------------dev----------------- #
 
-    optimizer = torch.optim.Adam(model.parameters(), opt.lr)
-    # optimizer = torch.optim.SGD(model_params, opt.lr, momentum=0.9, weight_decay=0.0004)
+    # optimizer = torch.optim.Adam(model.parameters(), opt.lr)
+
     start_epoch = 0
 
     # Get dataloader
