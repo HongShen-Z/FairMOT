@@ -7,7 +7,7 @@ from tracking_utils.kalman_filter import KalmanFilter
 from tracking_utils.log import logger
 from tracking_utils.utils import *
 from utils.post_process import ctdet_post_process
-from ..models.networks._decouple_dla_dcn import DLASeq
+from models.networks._decouple_dla_dcn import DLASeq
 
 from tracker import matching
 
