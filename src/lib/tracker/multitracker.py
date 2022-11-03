@@ -7,6 +7,7 @@ from tracking_utils.kalman_filter import KalmanFilter
 from tracking_utils.log import logger
 from tracking_utils.utils import *
 from utils.post_process import ctdet_post_process
+from ..models.networks._decouple_dla_dcn import DLASeq
 
 from tracker import matching
 
@@ -168,7 +169,7 @@ class JDETracker(object):
         print('Creating model...')
         self.model = create_model(opt.arch, opt.heads, opt.head_conv)
         self.model = load_model(self.model, opt.load_model)
-        self.model = self.model.to(opt.device)
+        self.model = DLASeq(self.model).to(opt.device)
         # self.model = self.model.to(opt.device)
         self.model.eval()
 
