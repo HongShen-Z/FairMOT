@@ -107,4 +107,5 @@ if __name__ == '__main__':
              'id': 128,
              'reg': 2}
     model = create_model('dla_34', heads, 256)
+    print(model)
     # print(model.dla_up.ida_2)
