@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from fvcore.nn import sigmoid_focal_loss_jit
 
 from ..models.losses import FocalLoss, VarifocalLoss, TripletLoss
-from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, GiouLoss
+from ..models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss, GiouLoss, bbox_iou
 from ..models.decode import mot_decode
 from ..models.utils import _sigmoid, _tranpose_and_gather_feat
 from ..utils.post_process import ctdet_post_process
@@ -28,7 +28,7 @@ class MotLoss(torch.nn.Module):
         # self.crit_wh = torch.nn.L1Loss(reduction='sum') if opt.dense_wh else \
         #     NormRegL1Loss() if opt.norm_wh else \
         #     RegWeightedL1Loss() if opt.cat_spec_wh else self.crit_reg
-        self.crit_wh = GiouLoss() if opt.dense_wh else self.crit_reg
+        self.crit_wh = bbox_iou if opt.dense_wh else self.crit_reg
         self.opt = opt
         self.emb_dim = opt.reid_dim
         self.nID = opt.nID
@@ -105,7 +105,8 @@ class MotLoss(torch.nn.Module):
             loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
             loss *= 0.5
         else:
-            loss = det_loss + 0.1 * id_loss
+            loss = det_loss + id_loss
+            # loss = det_loss + 0.1 * id_loss
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss, 'id_loss': id_loss}
         return loss, loss_stats
@@ -115,9 +116,9 @@ class MotTrainer(BaseTrainer):
     def __init__(self, opt, model, optimizer=None):
         super(MotTrainer, self).__init__(opt, model, optimizer=optimizer)
 
-    def _get_losses(self, opt, model):
+    def _get_losses(self, opt, share_w):
         loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
-        loss = MotLoss(opt, model)
+        loss = MotLoss(opt, share_w)
         return loss_states, loss
 
     def save_result(self, output, batch, results):
