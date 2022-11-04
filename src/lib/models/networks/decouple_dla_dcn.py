@@ -819,7 +819,7 @@ def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
                       last_level=5,
                       head_conv=head_conv)
     backbone_channels = [64, 128, 256, 512]
-    heads_net = nn.ModuleDict({head: HighResolutionHead(backbone_channels, heads(head)) for head in heads})
+    heads_net = nn.ModuleDict({head: HighResolutionHead(backbone_channels, heads[head]) for head in heads})
     # heads_net = nn.ModuleDict({head: CenterHead(backbone_channels, heads, head, head_conv) for head in heads})
     model = MTINet(heads, backbone, backbone_channels, heads_net)
     return model
