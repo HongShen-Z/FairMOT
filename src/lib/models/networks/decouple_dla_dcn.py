@@ -29,8 +29,40 @@ def conv3x3(in_planes, out_planes, stride=1):
                      padding=1, bias=False)
 
 
+class SEBlock(nn.Module):
+    """ Squeeze-and-excitation block """
+
+    def __init__(self, channels, r=16):
+        super(SEBlock, self).__init__()
+        self.r = r
+        self.squeeze = nn.Sequential(nn.Linear(channels, channels // self.r),
+                                     nn.ReLU(),
+                                     nn.Linear(channels // self.r, channels),
+                                     nn.Sigmoid())
+
+    def forward(self, x):
+        B, C, H, W = x.size()
+        squeeze = self.squeeze(torch.mean(x, dim=(2, 3))).view(B, C, 1, 1)
+        return torch.mul(x, squeeze)
+
+
+class SABlock(nn.Module):
+    """ Spatial self-attention block """
+
+    def __init__(self, in_channels, out_channels):
+        super(SABlock, self).__init__()
+        self.attention = nn.Sequential(nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False),
+                                       nn.Sigmoid())
+        self.conv = nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False)
+
+    def forward(self, x):
+        attention_mask = self.attention(x)
+        features = self.conv(x)
+        return torch.mul(features, attention_mask)
+
+
 class BasicBlock(nn.Module):
-    def __init__(self, inplanes, planes, stride=1, dilation=1):
+    def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=3,
                                stride=stride, padding=dilation,
@@ -42,6 +74,7 @@ class BasicBlock(nn.Module):
                                bias=False, dilation=dilation)
         self.bn2 = nn.BatchNorm2d(planes, momentum=BN_MOMENTUM)
         self.stride = stride
+        self.downsample = downsample
 
     def forward(self, x, residual=None):
         if residual is None:
@@ -53,6 +86,9 @@ class BasicBlock(nn.Module):
 
         out = self.conv2(out)
         out = self.bn2(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
 
         out += residual
         out = self.relu(out)
@@ -412,17 +448,6 @@ class DLAUp(nn.Module):
         return out
 
 
-class Interpolate(nn.Module):
-    def __init__(self, scale, mode):
-        super(Interpolate, self).__init__()
-        self.scale = scale
-        self.mode = mode
-
-    def forward(self, x):
-        x = F.interpolate(x, scale_factor=self.scale, mode=self.mode, align_corners=False)
-        return x
-
-
 class ReidUp(nn.Module):
     def __init__(self, in_channel, out_channel, up_radio):
         super(ReidUp, self).__init__()
@@ -447,7 +472,7 @@ class ReidUp(nn.Module):
 class InitialTaskPredictionModule(nn.Module):
     """ Module to make the inital task predictions """
 
-    def __init__(self, p, auxilary_tasks, input_channels, task_channels):
+    def __init__(self, heads, auxilary_tasks, input_channels, task_channels):
         super(InitialTaskPredictionModule, self).__init__()
         self.auxilary_tasks = auxilary_tasks
 
@@ -455,8 +480,8 @@ class InitialTaskPredictionModule(nn.Module):
         if input_channels == task_channels:
             channels = input_channels
             self.refinement = nn.ModuleDict(
-                {task: nn.Sequential(BasicBlock(channels, channels), BasicBlock(channels, channels)) for task in
-                 self.auxilary_tasks})
+                {task: nn.Sequential(BasicBlock(channels, channels), BasicBlock(channels, channels))
+                 for task in self.auxilary_tasks})
 
         else:
             refinement = {}
@@ -468,13 +493,13 @@ class InitialTaskPredictionModule(nn.Module):
             self.refinement = nn.ModuleDict(refinement)
 
         self.decoders = nn.ModuleDict(
-            {task: nn.Conv2d(task_channels, p.AUXILARY_TASKS.NUM_OUTPUT[task], 1) for task in self.auxilary_tasks})
+            {task: nn.Conv2d(task_channels, heads[task], 1) for task in self.auxilary_tasks})
 
     def forward(self, features_curr_scale, features_prev_scale=None):
         if features_prev_scale is not None:  # Concat features that were propagated from previous scale
             x = {t: torch.cat(
                 (features_curr_scale, F.interpolate(features_prev_scale[t], scale_factor=2, mode='bilinear')), 1) for t
-                 in self.auxilary_tasks}
+                in self.auxilary_tasks}
 
         else:
             x = {t: features_curr_scale for t in self.auxilary_tasks}
@@ -482,8 +507,8 @@ class InitialTaskPredictionModule(nn.Module):
         # Refinement + Decoding
         out = {}
         for t in self.auxilary_tasks:
-            out['features_%s' % (t)] = self.refinement[t](x[t])
-            out[t] = self.decoders[t](out['features_%s' % (t)])
+            out['features_%s' % t] = self.refinement[t](x[t])
+            out[t] = self.decoders[t](out['features_%s' % t])
 
         return out
 
@@ -518,7 +543,7 @@ class FPM(nn.Module):
 
     def forward(self, x):
         # Get shared representation
-        concat = torch.cat([x['features_%s' % (task)] for task in self.auxilary_tasks], 1)
+        concat = torch.cat([x['features_%s' % task] for task in self.auxilary_tasks], 1)
         B, C, H, W = concat.size()
         shared = self.non_linear(concat)
         mask = F.softmax(shared.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
@@ -530,7 +555,7 @@ class FPM(nn.Module):
         # Per task squeeze-and-excitation
         out = {}
         for task in self.auxilary_tasks:
-            out[task] = self.se[task](shared) + x['features_%s' % (task)]
+            out[task] = self.se[task](shared) + x['features_%s' % task]
 
         return out
 
@@ -554,10 +579,10 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = nn.ModuleDict(self.self_attention)
 
     def forward(self, x):
-        adapters = {t: {a: self.self_attention[t][a](x['features_%s' % (a)]) for a in self.auxilary_tasks if a != t} for
-                    t in self.tasks}
-        out = {t: x['features_%s' % (t)] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0) for t in
-               self.tasks}
+        adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
+                        for a in self.auxilary_tasks if a != t} for t in self.tasks}
+        out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
+               for t in self.tasks}
         return out
 
 
@@ -567,11 +592,11 @@ class MTINet(nn.Module):
         https://arxiv.org/pdf/2001.06902.pdf
     """
 
-    def __init__(self, p, backbone, backbone_channels, heads):
+    def __init__(self, heads, backbone, backbone_channels, heads_net):
         super(MTINet, self).__init__()
         # General
-        self.tasks = p.TASKS.NAMES
-        self.auxilary_tasks = p.AUXILARY_TASKS.NAMES
+        self.tasks = heads.keys()
+        self.auxilary_tasks = heads.keys()
         self.num_scales = len(backbone_channels)
         self.channels = backbone_channels
 
@@ -584,13 +609,14 @@ class MTINet(nn.Module):
         self.fpm_scale_1 = FPM(self.auxilary_tasks, self.channels[1])
 
         # Initial task predictions at multiple scales
-        self.scale_0 = InitialTaskPredictionModule(p, self.auxilary_tasks, self.channels[0] + self.channels[1],
-                                                   self.channels[0])
-        self.scale_1 = InitialTaskPredictionModule(p, self.auxilary_tasks, self.channels[1] + self.channels[2],
-                                                   self.channels[1])
-        self.scale_2 = InitialTaskPredictionModule(p, self.auxilary_tasks, self.channels[2] + self.channels[3],
-                                                   self.channels[2])
-        self.scale_3 = InitialTaskPredictionModule(p, self.auxilary_tasks, self.channels[3], self.channels[3])
+        self.scale_0 = InitialTaskPredictionModule(
+            heads, self.auxilary_tasks, self.channels[0] + self.channels[1], self.channels[0])
+        self.scale_1 = InitialTaskPredictionModule(
+            heads, self.auxilary_tasks, self.channels[1] + self.channels[2], self.channels[1])
+        self.scale_2 = InitialTaskPredictionModule(
+            heads, self.auxilary_tasks, self.channels[2] + self.channels[3], self.channels[2])
+        self.scale_3 = InitialTaskPredictionModule(
+            heads, self.auxilary_tasks, self.channels[3], self.channels[3])
 
         # Distillation at multiple scales
         self.distillation_scale_0 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[0])
@@ -599,7 +625,7 @@ class MTINet(nn.Module):
         self.distillation_scale_3 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[3])
 
         # Feature aggregation through HRNet heads
-        self.heads = heads
+        self.heads_net = heads_net
 
     def forward(self, x):
         img_size = x.size()[-2:]
@@ -632,7 +658,7 @@ class MTINet(nn.Module):
 
         # Feature aggregation
         for t in self.tasks:
-            out[t] = F.interpolate(self.heads[t](multi_scale_features[t]), img_size, mode='bilinear')
+            out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
 
         return out
 
@@ -662,32 +688,32 @@ class DLASeg(nn.Module):
         # self.DA_2 = ReidUp(channels[-2], channels[-3], 2)
         # self.DA_1 = ReidUp(channels[-3], channels[-4], 2)
 
-        self.heads = heads
-        # self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
-        # self.reid_heads = dict([('id', heads['id'])])
-        for head in self.heads:
-            classes = self.heads[head]
-            if head_conv > 0:
-                fc = nn.Sequential(
-                    nn.Conv2d(channels[self.first_level], head_conv,
-                              kernel_size=3, padding=1, bias=True),
-                    nn.ReLU(inplace=True),
-                    nn.Conv2d(head_conv, classes,
-                              kernel_size=final_kernel, stride=1,
-                              padding=final_kernel // 2, bias=True))
-                if 'hm' in head:
-                    fc[-1].bias.data.fill_(-2.19)
-                else:
-                    fill_fc_weights(fc)
-            else:
-                fc = nn.Conv2d(channels[self.first_level], classes,
-                               kernel_size=final_kernel, stride=1,
-                               padding=final_kernel // 2, bias=True)
-                if 'hm' in head:
-                    fc.bias.data.fill_(-2.19)
-                else:
-                    fill_fc_weights(fc)
-            self.__setattr__(head, fc)
+        # self.heads = heads
+        # # self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
+        # # self.reid_heads = dict([('id', heads['id'])])
+        # for head in self.heads:
+        #     classes = self.heads[head]
+        #     if head_conv > 0:
+        #         fc = nn.Sequential(
+        #             nn.Conv2d(channels[self.first_level], head_conv,
+        #                       kernel_size=3, padding=1, bias=True),
+        #             nn.ReLU(inplace=True),
+        #             nn.Conv2d(head_conv, classes,
+        #                       kernel_size=final_kernel, stride=1,
+        #                       padding=final_kernel // 2, bias=True))
+        #         if 'hm' in head:
+        #             fc[-1].bias.data.fill_(-2.19)
+        #         else:
+        #             fill_fc_weights(fc)
+        #     else:
+        #         fc = nn.Conv2d(channels[self.first_level], classes,
+        #                        kernel_size=final_kernel, stride=1,
+        #                        padding=final_kernel // 2, bias=True)
+        #         if 'hm' in head:
+        #             fc.bias.data.fill_(-2.19)
+        #         else:
+        #             fill_fc_weights(fc)
+        #     self.__setattr__(head, fc)
 
     def forward(self, x):
         x = self.base(x)
@@ -697,10 +723,10 @@ class DLASeg(nn.Module):
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        D = []
-        for i in range(self.last_level - self.first_level):
-            D.append(x[i].clone())
-        self.ida_up(D, 0, len(D))
+        # D = []
+        # for i in range(self.last_level - self.first_level):
+        #     D.append(x[i].clone())
+        # self.ida_up(D, 0, len(D))
 
         # det_att = self.DA_3(x[3])
         # det_att = self.DA_2(x[2] * det_att)
@@ -712,25 +738,88 @@ class DLASeg(nn.Module):
         # reid_att = self.RA_1(x[1] * reid_att)
         # R = x[0] * reid_att
 
-        z = {}
-        for head in self.heads:
-            z[head] = self.__getattr__(head)(D[-1])
-            # z[head] = self.__getattr__(head)(D)
-            # --------------------dev-------------------- #
-            # if 'wh' in head:
-            #     z[head] = F.relu(z[head])
+        # z = {}
+        # for head in self.heads:
+        #     z[head] = self.__getattr__(head)(D[-1])
+        #     z[head] = self.__getattr__(head)(D)
+
         # for head in self.reid_heads:
         #     z[head] = self.__getattr__(head)(R)
 
-        return z
+        return x
+
+
+class HighResolutionHead(nn.Module):
+    def __init__(self, backbone_channels, num_outputs):
+        super(HighResolutionHead, self).__init__()
+        last_inp_channels = sum(backbone_channels)
+        self.last_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels=last_inp_channels,
+                out_channels=last_inp_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0),
+            nn.BatchNorm2d(last_inp_channels, momentum=0.1),
+            nn.ReLU(inplace=False),
+            nn.Conv2d(
+                in_channels=last_inp_channels,
+                out_channels=num_outputs,
+                kernel_size=1,
+                stride=1,
+                padding=0))
+
+    def forward(self, x):
+        x0_h, x0_w = x[0].size(2), x[0].size(3)
+        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
+        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
+        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
+
+        x = torch.cat([x[0], x1, x2, x3], 1)
+        x = self.last_layer(x)
+        return x
+
+
+class CenterHead(nn.Module):
+    def __init__(self, backbone_channels, heads, head, head_conv=256):
+        super(CenterHead, self).__init__()
+        if head_conv > 0:
+            self.fc = nn.Sequential(
+                nn.Conv2d(backbone_channels[0], head_conv, kernel_size=3, padding=1, bias=True),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(head_conv, heads[head], kernel_size=1, stride=1, padding=0, bias=True))
+            if 'hm' in head:
+                self.fc[-1].bias.data.fill_(-2.19)
+            else:
+                fill_fc_weights(self.fc)
+        else:
+            self.fc = nn.Conv2d(backbone_channels[0], heads[head],
+                                kernel_size=1, stride=1, padding=0, bias=True)
+            if 'hm' in head:
+                self.fc.bias.data.fill_(-2.19)
+            else:
+                fill_fc_weights(self.fc)
+
+    def forward(self, x):
+        x0_h, x0_w = x[0].size(2), x[0].size(3)
+        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
+        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
+        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
+
+        x = torch.cat([x[0], x1, x2, x3], 1)
+        x = self.fc(x)
+        return x
 
 
 def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
-    model = DLASeg('dla{}'.format(num_layers), heads,
-                   pretrained=False,
-                   down_ratio=down_ratio,
-                   final_kernel=1,
-                   last_level=5,
-                   head_conv=head_conv)
+    backbone = DLASeg('dla{}'.format(num_layers), heads,
+                      pretrained=False,
+                      down_ratio=down_ratio,
+                      final_kernel=1,
+                      last_level=5,
+                      head_conv=head_conv)
+    backbone_channels = [64, 128, 256, 512]
+    heads_net = nn.ModuleDict({head: HighResolutionHead(backbone_channels, heads(head)) for head in heads})
+    # heads_net = nn.ModuleDict({head: CenterHead(backbone_channels, heads, head, head_conv) for head in heads})
+    model = MTINet(heads, backbone, backbone_channels, heads_net)
     return model
-
