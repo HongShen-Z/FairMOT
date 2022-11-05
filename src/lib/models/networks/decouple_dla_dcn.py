@@ -735,11 +735,11 @@ class DLASeg(nn.Module):
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]  # [1, 2, 4, 8]
         self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
 
-        if out_channel == 0:
-            out_channel = channels[self.first_level]
+        # if out_channel == 0:
+        #     out_channel = channels[self.first_level]
 
-        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-                            [2 ** i for i in range(self.last_level - self.first_level)])
+        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+        #                     [2 ** i for i in range(self.last_level - self.first_level)])
 
         heads_net = nn.ModuleDict(
             {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
