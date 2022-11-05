@@ -592,16 +592,13 @@ class MTINet(nn.Module):
         https://arxiv.org/pdf/2001.06902.pdf
     """
 
-    def __init__(self, heads, backbone, backbone_channels, heads_net):
+    def __init__(self, heads, backbone_channels, heads_net):
         super(MTINet, self).__init__()
         # General
         self.tasks = heads.keys()
         self.auxilary_tasks = heads.keys()
         self.num_scales = len(backbone_channels)
         self.channels = backbone_channels
-
-        # Backbone
-        self.backbone = backbone
 
         # Feature Propagation Module
         self.fpm_scale_3 = FPM(self.auxilary_tasks, self.channels[3])
@@ -628,11 +625,11 @@ class MTINet(nn.Module):
         self.heads_net = heads_net
 
     def forward(self, x):
-        img_size = x.size()[-2:]
+        # img_size = x.size()[-2:]
         out = {}
 
         # Backbone
-        x = self.backbone(x)
+        # x = self.backbone(x)
 
         # Predictions at multiple scales
         # Scale 3
@@ -658,9 +655,72 @@ class MTINet(nn.Module):
 
         # Feature aggregation
         for t in self.tasks:
-            out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
+            # out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
+            out[t] = self.heads_net[t](multi_scale_features[t])
 
         return out
+
+
+class CenterHead(nn.Module):
+    def __init__(self, backbone_channels, heads, head, head_conv=256):
+        super(CenterHead, self).__init__()
+        if head_conv > 0:
+            self.fc = nn.Sequential(
+                nn.Conv2d(backbone_channels[0], head_conv, kernel_size=3, padding=1, bias=True),
+                nn.ReLU(inplace=True),
+                nn.Conv2d(head_conv, heads[head], kernel_size=1, stride=1, padding=0, bias=True))
+            if 'hm' in head:
+                self.fc[-1].bias.data.fill_(-2.19)
+            else:
+                fill_fc_weights(self.fc)
+        else:
+            self.fc = nn.Conv2d(backbone_channels[0], heads[head],
+                                kernel_size=1, stride=1, padding=0, bias=True)
+            if 'hm' in head:
+                self.fc.bias.data.fill_(-2.19)
+            else:
+                fill_fc_weights(self.fc)
+
+    def forward(self, x):
+        x0_h, x0_w = x[0].size(2), x[0].size(3)
+        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
+        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
+        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
+
+        x = torch.cat([x[0], x1, x2, x3], 1)
+        x = self.fc(x)
+        return x
+
+
+class HighResolutionHead(nn.Module):
+    def __init__(self, backbone_channels, num_outputs):
+        super(HighResolutionHead, self).__init__()
+        last_inp_channels = sum(backbone_channels)
+        self.last_layer = nn.Sequential(
+            nn.Conv2d(
+                in_channels=last_inp_channels,
+                out_channels=last_inp_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0),
+            nn.BatchNorm2d(last_inp_channels, momentum=0.1),
+            nn.ReLU(inplace=False),
+            nn.Conv2d(
+                in_channels=last_inp_channels,
+                out_channels=num_outputs,
+                kernel_size=1,
+                stride=1,
+                padding=0))
+
+    def forward(self, x):
+        x0_h, x0_w = x[0].size(2), x[0].size(3)
+        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
+        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
+        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
+
+        x = torch.cat([x[0], x1, x2, x3], 1)
+        x = self.last_layer(x)
+        return x
 
 
 class DLASeg(nn.Module):
@@ -680,6 +740,12 @@ class DLASeg(nn.Module):
 
         self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
                             [2 ** i for i in range(self.last_level - self.first_level)])
+
+        heads_net = nn.ModuleDict(
+            {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
+        # heads_net = nn.ModuleDict(
+        #     {head: CenterHead(channels[self.first_level:], heads, head, head_conv) for head in heads})
+        self.mti_net = MTINet(heads, channels[self.first_level:], heads_net)
 
         # self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
         # self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
@@ -746,80 +812,15 @@ class DLASeg(nn.Module):
         # for head in self.reid_heads:
         #     z[head] = self.__getattr__(head)(R)
 
-        return x
-
-
-class HighResolutionHead(nn.Module):
-    def __init__(self, backbone_channels, num_outputs):
-        super(HighResolutionHead, self).__init__()
-        last_inp_channels = sum(backbone_channels)
-        self.last_layer = nn.Sequential(
-            nn.Conv2d(
-                in_channels=last_inp_channels,
-                out_channels=last_inp_channels,
-                kernel_size=1,
-                stride=1,
-                padding=0),
-            nn.BatchNorm2d(last_inp_channels, momentum=0.1),
-            nn.ReLU(inplace=False),
-            nn.Conv2d(
-                in_channels=last_inp_channels,
-                out_channels=num_outputs,
-                kernel_size=1,
-                stride=1,
-                padding=0))
-
-    def forward(self, x):
-        x0_h, x0_w = x[0].size(2), x[0].size(3)
-        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
-        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
-        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
-
-        x = torch.cat([x[0], x1, x2, x3], 1)
-        x = self.last_layer(x)
-        return x
-
-
-class CenterHead(nn.Module):
-    def __init__(self, backbone_channels, heads, head, head_conv=256):
-        super(CenterHead, self).__init__()
-        if head_conv > 0:
-            self.fc = nn.Sequential(
-                nn.Conv2d(backbone_channels[0], head_conv, kernel_size=3, padding=1, bias=True),
-                nn.ReLU(inplace=True),
-                nn.Conv2d(head_conv, heads[head], kernel_size=1, stride=1, padding=0, bias=True))
-            if 'hm' in head:
-                self.fc[-1].bias.data.fill_(-2.19)
-            else:
-                fill_fc_weights(self.fc)
-        else:
-            self.fc = nn.Conv2d(backbone_channels[0], heads[head],
-                                kernel_size=1, stride=1, padding=0, bias=True)
-            if 'hm' in head:
-                self.fc.bias.data.fill_(-2.19)
-            else:
-                fill_fc_weights(self.fc)
-
-    def forward(self, x):
-        x0_h, x0_w = x[0].size(2), x[0].size(3)
-        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
-        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
-        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
-
-        x = torch.cat([x[0], x1, x2, x3], 1)
-        x = self.fc(x)
-        return x
+        out = self.mti_net(x)
+        return out
 
 
 def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
-    backbone = DLASeg('dla{}'.format(num_layers), heads,
-                      pretrained=False,
-                      down_ratio=down_ratio,
-                      final_kernel=1,
-                      last_level=5,
-                      head_conv=head_conv)
-    backbone_channels = [64, 128, 256, 512]
-    heads_net = nn.ModuleDict({head: HighResolutionHead(backbone_channels, heads[head]) for head in heads})
-    # heads_net = nn.ModuleDict({head: CenterHead(backbone_channels, heads, head, head_conv) for head in heads})
-    model = MTINet(heads, backbone, backbone_channels, heads_net)
+    model = DLASeg('dla{}'.format(num_layers), heads,
+                   pretrained=False,
+                   down_ratio=down_ratio,
+                   final_kernel=1,
+                   last_level=5,
+                   head_conv=head_conv)
     return model

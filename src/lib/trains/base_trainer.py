@@ -27,7 +27,7 @@ class BaseTrainer(object):
     def __init__(self, opt, model, optimizer=None):
         self.opt = opt
         self.optimizer = optimizer
-        self.loss_stats, self.loss = self._get_losses(opt, model.backbone.dla_up.ida_2.parameters())
+        self.loss_stats, self.loss = self._get_losses(opt, model.dla_up.ida_2.parameters())
         self.model_with_loss = ModleWithLoss(model, self.loss)
         self.optimizer.add_param_group({'params': self.loss.parameters()})
 
