@@ -692,6 +692,7 @@ class CenterHead(nn.Module):
         if head_conv > 0:
             self.fc = nn.Sequential(
                 nn.Conv2d(backbone_channels[0], head_conv, kernel_size=3, padding=1, bias=True),
+                nn.BatchNorm2d(head_conv, momentum=0.1),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(head_conv, heads[head], kernel_size=1, stride=1, padding=0, bias=True))
             if 'hm' in head:
@@ -728,7 +729,7 @@ class HighResolutionHead(nn.Module):
                 kernel_size=3,
                 stride=1,
                 padding=0),
-            # nn.BatchNorm2d(last_inp_channels, momentum=0.1),
+            nn.BatchNorm2d(256, momentum=0.1),
             nn.ReLU(inplace=False),
             nn.Conv2d(
                 in_channels=256,
