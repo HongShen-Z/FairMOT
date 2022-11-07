@@ -569,7 +569,8 @@ class FPM(nn.Module):
         # Per task squeeze-and-excitation
         out = {}
         for task in self.auxilary_tasks:
-            out[task] = self.se[task](shared) + x['features_%s' % task]
+            # out[task] = self.se[task](shared) + x['features_%s' % task]
+            out['features_%s' % task] = self.se[task](shared) + x['features_%s' % task]
 
         return out
 
