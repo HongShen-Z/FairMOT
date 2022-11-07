@@ -558,8 +558,9 @@ class FPM(nn.Module):
         # Get shared representation
         concat = torch.cat([x['features_%s' % task] for task in self.auxilary_tasks], 1)
         B, C, H, W = concat.size()
-        shared = self.non_linear(concat)
-        mask = F.softmax(shared.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
+        # shared = self.non_linear(concat)
+        # mask = F.softmax(shared.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
+        mask = F.softmax(concat.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
         shared = torch.mul(mask, concat.view(B, C // self.N, self.N, H, W)).view(B, -1, H, W)
 
         # Perform dimensionality reduction
@@ -614,25 +615,28 @@ class MTINet(nn.Module):
         self.channels = backbone_channels
 
         # Feature Propagation Module
-        self.fpm_scale_3 = FPM(self.auxilary_tasks, self.channels[3])
-        self.fpm_scale_2 = FPM(self.auxilary_tasks, self.channels[2])
-        self.fpm_scale_1 = FPM(self.auxilary_tasks, self.channels[1])
+        # self.fpm_scale_3 = FPM(self.auxilary_tasks, self.channels[3])
+        # self.fpm_scale_2 = FPM(self.auxilary_tasks, self.channels[2])
+        # self.fpm_scale_1 = FPM(self.auxilary_tasks, self.channels[1])
 
         # Initial task predictions at multiple scales
+        # self.scale_0 = InitialTaskPredictionModule(
+        #     heads, self.auxilary_tasks, self.channels[0] + self.channels[1], self.channels[0])
+        # self.scale_1 = InitialTaskPredictionModule(
+        #     heads, self.auxilary_tasks, self.channels[1] + self.channels[2], self.channels[1])
+        # self.scale_2 = InitialTaskPredictionModule(
+        #     heads, self.auxilary_tasks, self.channels[2] + self.channels[3], self.channels[2])
+        # self.scale_3 = InitialTaskPredictionModule(
+        #     heads, self.auxilary_tasks, self.channels[3], self.channels[3])
+
         self.scale_0 = InitialTaskPredictionModule(
-            heads, self.auxilary_tasks, self.channels[0] + self.channels[1], self.channels[0])
-        self.scale_1 = InitialTaskPredictionModule(
-            heads, self.auxilary_tasks, self.channels[1] + self.channels[2], self.channels[1])
-        self.scale_2 = InitialTaskPredictionModule(
-            heads, self.auxilary_tasks, self.channels[2] + self.channels[3], self.channels[2])
-        self.scale_3 = InitialTaskPredictionModule(
-            heads, self.auxilary_tasks, self.channels[3], self.channels[3])
+            heads, self.auxilary_tasks, self.channels[0], self.channels[0])
 
         # Distillation at multiple scales
         self.distillation_scale_0 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[0])
-        self.distillation_scale_1 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[1])
-        self.distillation_scale_2 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[2])
-        self.distillation_scale_3 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[3])
+        # self.distillation_scale_1 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[1])
+        # self.distillation_scale_2 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[2])
+        # self.distillation_scale_3 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[3])
 
         # Feature aggregation through HRNet heads
         self.heads_net = heads_net
@@ -645,31 +649,35 @@ class MTINet(nn.Module):
         # x = self.backbone(x)
 
         # Predictions at multiple scales
-        # Scale 3
-        x_3 = self.scale_3(x[3])
-        x_3_fpm = self.fpm_scale_3(x_3)
-        # Scale 2
-        x_2 = self.scale_2(x[2], x_3_fpm)
-        x_2_fpm = self.fpm_scale_2(x_2)
-        # Scale 1
-        x_1 = self.scale_1(x[1], x_2_fpm)
-        x_1_fpm = self.fpm_scale_1(x_1)
-        # Scale 0
-        x_0 = self.scale_0(x[0], x_1_fpm)
+        # # Scale 3
+        # x_3 = self.scale_3(x[3])
+        # x_3_fpm = self.fpm_scale_3(x_3)
+        # # Scale 2
+        # x_2 = self.scale_2(x[2], x_3_fpm)
+        # x_2_fpm = self.fpm_scale_2(x_2)
+        # # Scale 1
+        # x_1 = self.scale_1(x[1], x_2_fpm)
+        # x_1_fpm = self.fpm_scale_1(x_1)
+        # # Scale 0
+        # x_0 = self.scale_0(x[0], x_1_fpm)
+        #
+        # out['deep_supervision'] = {'scale_0': x_0, 'scale_1': x_1, 'scale_2': x_2, 'scale_3': x_3}
 
-        out['deep_supervision'] = {'scale_0': x_0, 'scale_1': x_1, 'scale_2': x_2, 'scale_3': x_3}
+        x_0 = self.scale_0(x)
+        out['deep_supervision'] = {'scale_0': x_0}
 
         # Distillation + Output
         features_0 = self.distillation_scale_0(x_0)
-        features_1 = self.distillation_scale_1(x_1)
-        features_2 = self.distillation_scale_2(x_2)
-        features_3 = self.distillation_scale_3(x_3)
-        multi_scale_features = {t: [features_0[t], features_1[t], features_2[t], features_3[t]] for t in self.tasks}
+        # features_1 = self.distillation_scale_1(x_1)
+        # features_2 = self.distillation_scale_2(x_2)
+        # features_3 = self.distillation_scale_3(x_3)
+        # multi_scale_features = {t: [features_0[t], features_1[t], features_2[t], features_3[t]] for t in self.tasks}
 
         # Feature aggregation
         for t in self.tasks:
             # out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
-            out[t] = self.heads_net[t](multi_scale_features[t])
+            # out[t] = self.heads_net[t](multi_scale_features[t])
+            out[t] = self.heads_net[t](features_0)
 
         return out
 
@@ -695,12 +703,12 @@ class CenterHead(nn.Module):
                 fill_fc_weights(self.fc)
 
     def forward(self, x):
-        x0_h, x0_w = x[0].size(2), x[0].size(3)
-        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
-        x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
-        x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
-
-        x = torch.cat([x[0], x1, x2, x3], 1)
+        # x0_h, x0_w = x[0].size(2), x[0].size(3)
+        # x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
+        # x2 = F.interpolate(x[2], (x0_h, x0_w), mode='bilinear')
+        # x3 = F.interpolate(x[3], (x0_h, x0_w), mode='bilinear')
+        #
+        # x = torch.cat([x[0], x1, x2, x3], 1)
         x = self.fc(x)
         return x
 
@@ -712,14 +720,14 @@ class HighResolutionHead(nn.Module):
         self.last_layer = nn.Sequential(
             nn.Conv2d(
                 in_channels=last_inp_channels,
-                out_channels=last_inp_channels,
-                kernel_size=1,
+                out_channels=256,
+                kernel_size=3,
                 stride=1,
                 padding=0),
-            nn.BatchNorm2d(last_inp_channels, momentum=0.1),
+            # nn.BatchNorm2d(last_inp_channels, momentum=0.1),
             nn.ReLU(inplace=False),
             nn.Conv2d(
-                in_channels=last_inp_channels,
+                in_channels=256,
                 out_channels=num_outputs,
                 kernel_size=1,
                 stride=1,
@@ -748,16 +756,16 @@ class DLASeg(nn.Module):
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]  # [1, 2, 4, 8]
         self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
 
-        # if out_channel == 0:
-        #     out_channel = channels[self.first_level]
+        if out_channel == 0:
+            out_channel = channels[self.first_level]
 
-        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-        #                     [2 ** i for i in range(self.last_level - self.first_level)])
+        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+                            [2 ** i for i in range(self.last_level - self.first_level)])
 
-        heads_net = nn.ModuleDict(
-            {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
         # heads_net = nn.ModuleDict(
-        #     {head: CenterHead(channels[self.first_level:], heads, head, head_conv) for head in heads})
+        #     {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
+        heads_net = nn.ModuleDict(
+            {head: CenterHead(channels[self.first_level:], heads, head, head_conv) for head in heads})
         self.mti_net = MTINet(heads, channels[self.first_level:], heads_net)
         self.mti_net.apply(weight_init)
 
@@ -803,10 +811,10 @@ class DLASeg(nn.Module):
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        # D = []
-        # for i in range(self.last_level - self.first_level):
-        #     D.append(x[i].clone())
-        # self.ida_up(D, 0, len(D))
+        D = []
+        for i in range(self.last_level - self.first_level):
+            D.append(x[i].clone())
+        self.ida_up(D, 0, len(D))
 
         # det_att = self.DA_3(x[3])
         # det_att = self.DA_2(x[2] * det_att)
