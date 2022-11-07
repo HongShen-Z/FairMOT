@@ -677,7 +677,7 @@ class MTINet(nn.Module):
         for t in self.tasks:
             # out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
             # out[t] = self.heads_net[t](multi_scale_features[t])
-            out[t] = self.heads_net[t](features_0)
+            out[t] = self.heads_net[t](features_0[t])
 
         return out
 
