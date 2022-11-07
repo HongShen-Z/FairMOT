@@ -834,7 +834,7 @@ class DLASeg(nn.Module):
         # for head in self.reid_heads:
         #     z[head] = self.__getattr__(head)(R)
 
-        out = self.mti_net(x)
+        out = self.mti_net(D[-1])
         return out
 
 
