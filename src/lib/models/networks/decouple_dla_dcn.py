@@ -538,12 +538,12 @@ class FPM(nn.Module):
         self.shared_channels = int(self.N * per_task_channels)
 
         # Non-linear function f
-        downsample = nn.Sequential(nn.Conv2d(self.shared_channels, self.shared_channels // 4, 1, bias=False),
-                                   nn.BatchNorm2d(self.shared_channels // 4))
-        self.non_linear = nn.Sequential(
-            BasicBlock(self.shared_channels, self.shared_channels // 4, downsample=downsample),
-            BasicBlock(self.shared_channels // 4, self.shared_channels // 4),
-            nn.Conv2d(self.shared_channels // 4, self.shared_channels, 1))
+        # downsample = nn.Sequential(nn.Conv2d(self.shared_channels, self.shared_channels // 4, 1, bias=False),
+        #                            nn.BatchNorm2d(self.shared_channels // 4))
+        # self.non_linear = nn.Sequential(
+        #     BasicBlock(self.shared_channels, self.shared_channels // 4, downsample=downsample),
+        #     BasicBlock(self.shared_channels // 4, self.shared_channels // 4),
+        #     nn.Conv2d(self.shared_channels // 4, self.shared_channels, 1))
 
         # Dimensionality reduction
         downsample = nn.Sequential(nn.Conv2d(self.shared_channels, self.per_task_channels, 1, bias=False),
@@ -629,6 +629,7 @@ class MTINet(nn.Module):
         # self.scale_3 = InitialTaskPredictionModule(
         #     heads, self.auxilary_tasks, self.channels[3], self.channels[3])
 
+        self.fpm_0 = FPM(self.auxilary_tasks, self.channels[0])
         self.scale_0 = InitialTaskPredictionModule(
             heads, self.auxilary_tasks, self.channels[0], self.channels[0])
 
@@ -665,6 +666,8 @@ class MTINet(nn.Module):
 
         x_0 = self.scale_0(x)
         out['deep_supervision'] = {'scale_0': x_0}
+
+        x_0 = self.fpm_0(x_0)
 
         # Distillation + Output
         features_0 = self.distillation_scale_0(x_0)
