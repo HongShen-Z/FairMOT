@@ -637,7 +637,7 @@ class MTINet(nn.Module):
         # self.scale_3 = InitialTaskPredictionModule(
         #     heads, self.auxilary_tasks, self.channels[3], self.channels[3])
 
-        self.fpm_0 = FPM(self.auxilary_tasks, self.channels[0])
+        # self.fpm_0 = FPM(self.auxilary_tasks, self.channels[0])
         self.scale_0 = InitialTaskPredictionModule(
             heads, self.auxilary_tasks, self.channels[0], self.channels[0])
 
