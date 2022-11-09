@@ -589,15 +589,22 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = {}
 
         for t in self.tasks:
-            other_tasks = [a for a in self.auxilary_tasks if a != t]
-            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in other_tasks})
+            # other_tasks = [a for a in self.auxilary_tasks if a != t]
+            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in self.tasks})
         self.self_attention = nn.ModuleDict(self.self_attention)
+
+        # SEBlock
+        self.se = nn.ModuleDict({task: SEBlock(channels) for task in self.tasks})
 
     def forward(self, x):
         adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
-                        for a in self.auxilary_tasks if a != t} for t in self.tasks}
+                        for a in self.tasks} for t in self.tasks}
         out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
                for t in self.tasks}
+
+        for t in self.tasks:
+            out[t] = self.se[t](out[t])
+
         return out
 
 
@@ -668,7 +675,7 @@ class MTINet(nn.Module):
         x_0 = self.scale_0(x)
         out['deep_supervision'] = {'scale_0': x_0}
 
-        x_0 = self.fpm_0(x_0)
+        # x_0 = self.fpm_0(x_0)
 
         # Distillation + Output
         features_0 = self.distillation_scale_0(x_0)

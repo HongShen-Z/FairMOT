@@ -47,8 +47,13 @@ class MotLoss(torch.nn.Module):
     def forward(self, outputs, batch):
         opt = self.opt
         hm_loss, wh_loss, off_loss, id_loss = 0, 0, 0, 0
+
+        pred_scale = outputs['deep_supervision']['scale_0']
+
         if opt.mse_loss != 'mse':
             outputs['hm'] = _sigmoid(outputs['hm'])
+            pred_scale['hm'] = _sigmoid(pred_scale['hm'])
+        hm_loss += self.crit(pred_scale['hm'], batch['hm'])
         hm_loss += self.crit(outputs['hm'], batch['hm'])
 
         if opt.wh_weight > 0:
@@ -72,19 +77,29 @@ class MotLoss(torch.nn.Module):
                 wh_loss += self.crit_wh(pred_boxes, mask, boxes)
             else:
                 wh_loss += self.crit_wh(
+                    pred_scale['wh'], batch['reg_mask'],
+                    batch['ind'], batch['wh'])
+                wh_loss += self.crit_wh(
                     outputs['wh'], batch['reg_mask'],
                     batch['ind'], batch['wh'])
 
         if opt.reg_offset and opt.off_weight > 0:
+            off_loss += self.crit_reg(pred_scale['reg'], batch['reg_mask'],
+                                      batch['ind'], batch['reg'])
             off_loss += self.crit_reg(outputs['reg'], batch['reg_mask'],
                                       batch['ind'], batch['reg'])
 
         if opt.id_weight > 0:
+            id_head_scale = _tranpose_and_gather_feat(pred_scale['id'], batch['ind'])
+            id_head_scale = id_head_scale[batch['reg_mask'] > 0].contiguous()
+            id_head_scale = self.emb_scale * F.normalize(id_head_scale)
+
             id_head = _tranpose_and_gather_feat(outputs['id'], batch['ind'])
             id_head = id_head[batch['reg_mask'] > 0].contiguous()
             id_head = self.emb_scale * F.normalize(id_head)
             id_target = batch['ids'][batch['reg_mask'] > 0]
 
+            id_output_scale = self.classifier(id_head_scale).contiguous()
             id_output = self.classifier(id_head).contiguous()
             if self.opt.id_loss == 'focal':
                 id_target_one_hot = id_output.new_zeros((id_head.size(0), self.nID)).scatter_(1,
@@ -94,6 +109,7 @@ class MotLoss(torch.nn.Module):
                                                   alpha=0.25, gamma=2.0, reduction="sum"
                                                   ) / id_output.size(0)
             else:
+                id_loss += self.IDLoss(id_output_scale, id_target)
                 id_loss += self.IDLoss(id_output, id_target)
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
