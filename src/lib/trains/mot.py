@@ -115,7 +115,8 @@ class MotLoss(torch.nn.Module):
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
         if opt.multi_loss == 'grad_norm':
-            task_losses = {'D': det_loss, 'R': id_loss}
+            # task_losses = {'D': det_loss, 'R': id_loss}
+            task_losses = {'hm': hm_loss, 'wh': wh_loss, 'reg': off_loss, 'id': id_loss}
             loss = call_gradnorm(self.share_w, task_losses)
         elif opt.multi_loss == 'uncertainty':
             loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
