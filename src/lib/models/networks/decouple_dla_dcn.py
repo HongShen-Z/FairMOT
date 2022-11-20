@@ -590,6 +590,7 @@ class MultiTaskDistillationModule(nn.Module):
         self.tasks = tasks
         self.auxilary_tasks = auxilary_tasks
         self.self_attention = {}
+        self.meta_tasks = {'det': self.tasks - {'id'}, 'id': 'id'}
 
         for t in self.tasks:
             self.proj = nn.ModuleDict({t: MTAttention(k_size=3, ch=channels, s_state=True, c_state=False)})
@@ -604,11 +605,11 @@ class MultiTaskDistillationModule(nn.Module):
 
     def forward(self, x):
         for t in self.tasks:
-            x['features_%s' % t] = self.proj[t]
+            x['features_%s' % t] = self.proj[t](x['features_%s' % t])
         adapters = {'id': self.node(torch.cat([x['features_%s' % t] for t in self.meta_tasks['det']], 1)),
                     'det': self.c_att(x['features_id'])}
         out = {'id': self.c_att(x['features_id']) + adapters['id']}
-        for t in self.tasks - {'id'}:
+        for t in self.meta_tasks['det']:
             out[t] = x['features_%s' % t] + adapters['det']
 
         # adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
