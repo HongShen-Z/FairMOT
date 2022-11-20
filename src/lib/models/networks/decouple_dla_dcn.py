@@ -590,7 +590,7 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = {}
 
         for t in self.tasks:
-            self.proj[t] = nn.Sequential(MTAttention(k_size=3, ch=channels, s_state=True, c_state=False))
+            self.proj = nn.ModuleDict({t: MTAttention(k_size=3, ch=channels, s_state=True, c_state=False)})
         self.node = nn.Sequential(MTAttention(k_size=3, ch=channels*3, s_state=False, c_state=True),
                                   Conv(channels*3, channels, k=3))
         self.c_att = nn.Sequential(MTAttention(k_size=3, ch=channels, s_state=False, c_state=True))
