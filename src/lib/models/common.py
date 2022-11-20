@@ -35,7 +35,8 @@ class Conv(nn.Module):
         self.act = nn.LeakyReLU(0.1, inplace=True) if act else nn.Identity()
 
     def forward(self, x):
-        return self.act(self.bn(self.conv(x)))
+        x = self.conv(x)
+        return self.act(self.bn(x))
 
     def fuseforward(self, x):
         return self.act(self.conv(x))
