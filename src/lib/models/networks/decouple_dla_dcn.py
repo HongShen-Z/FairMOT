@@ -13,6 +13,8 @@ from torch import nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 
+from ..common import Conv
+
 from dcn_v2 import DCN
 
 BN_MOMENTUM = 0.1
@@ -588,16 +590,89 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = {}
 
         for t in self.tasks:
-            other_tasks = [a for a in self.auxilary_tasks if a != t]
-            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in other_tasks})
-        self.self_attention = nn.ModuleDict(self.self_attention)
+            self.proj[t] = nn.Sequential(MTAttention(k_size=3, ch=channels, s_state=True, c_state=False))
+        self.node = nn.Sequential(MTAttention(k_size=3, ch=channels*3, s_state=False, c_state=True),
+                                  Conv(channels*3, channels, k=3))
+        self.c_att = nn.Sequential(MTAttention(k_size=3, ch=channels, s_state=False, c_state=True))
+
+        # for t in self.tasks:
+        #     other_tasks = [a for a in self.auxilary_tasks if a != t]
+        #     self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in other_tasks})
+        # self.self_attention = nn.ModuleDict(self.self_attention)
 
     def forward(self, x):
-        adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
-                        for a in self.auxilary_tasks if a != t} for t in self.tasks}
-        out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
-               for t in self.tasks}
+        for t in self.tasks:
+            x['features_%s' % t] = self.proj[t]
+        adapters = {'id': self.node(torch.cat([x['features_%s' % t] for t in self.meta_tasks['det']], 1)),
+                    'det': self.c_att(x['features_id'])}
+        out = {'id': self.c_att(x['features_id']) + adapters['id']}
+        for t in self.tasks - {'id'}:
+            out[t] = x['features_%s' % t] + adapters['det']
+
+        # adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
+        #                 for a in self.auxilary_tasks if a != t} for t in self.tasks}
+        # out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
+        #        for t in self.tasks}
         return out
+
+
+class MTAttention(nn.Module):
+    """
+    Multi-task attention
+    Args:
+        channel: Number of channels of the input feature map
+        k_size: Adaptive selection of kernel size
+    """
+
+    def __init__(self, k_size=3, ch=256, s_state=False, c_state=False):
+        super(MTAttention, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+        self.sigmoid = nn.Sigmoid()
+        # self.conv1 = Conv(ch, ch,k=1)
+
+        self.s_state = s_state
+        self.c_state = c_state
+
+        if c_state:
+            self.c_attention = nn.Sequential(nn.Conv1d(1, 1, kernel_size=k_size, padding=(k_size - 1) // 2, bias=False),
+                                             nn.LayerNorm([1, ch]),
+                                             nn.LeakyReLU(0.3, inplace=True),
+                                             nn.Linear(ch, ch, bias=False))
+
+        if s_state:
+            self.conv_s = nn.Sequential(Conv(ch, ch // 4, k=1))
+            self.s_attention = nn.Conv2d(2, 1, 7, padding=3, bias=False)
+
+    def forward(self, x):
+        # x: input features with shape [b, c, h, w]
+        # b, c, h, w = x.size()
+
+        # channel_attention
+        if self.c_state:
+            y_avg = self.avg_pool(x)
+            y_max = self.max_pool(x)
+            y_c = self.c_attention(y_avg.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1) + \
+                  self.c_attention(y_max.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+            y_c = self.sigmoid(y_c)
+
+        # spatial_attention
+        if self.s_state:
+            x_s = self.conv_s(x)
+            avg_out = torch.mean(x_s, dim=1, keepdim=True)
+            max_out, _ = torch.max(x_s, dim=1, keepdim=True)
+            y_s = torch.cat([avg_out, max_out], dim=1)
+            y_s = self.sigmoid(self.s_attention(y_s))
+
+        if self.c_state and self.s_state:
+            y = x * y_s * y_c + x
+        elif self.c_state:
+            y = x * y_c + x
+        elif self.s_state:
+            y = x * y_s + x
+        else:
+            y = x
+        return y
 
 
 class MTINet(nn.Module):
