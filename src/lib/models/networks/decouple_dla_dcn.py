@@ -378,6 +378,8 @@ def weight_init(m):
     # 判断是否为conv2d，使用相应的初始化方式
     elif isinstance(m, nn.Conv2d):
         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0)
     # 是否为批归一化层
     elif isinstance(m, nn.BatchNorm2d):
         nn.init.constant_(m.weight, 1)
@@ -634,6 +636,7 @@ class MTAttention(nn.Module):
         self.max_pool = nn.AdaptiveMaxPool2d(1)
         self.sigmoid = nn.Sigmoid()
         # self.conv1 = Conv(ch, ch,k=1)
+        self.conv_s = Conv(ch, ch // 4, k=1)
 
         self.s_state = s_state
         self.c_state = c_state
@@ -645,7 +648,7 @@ class MTAttention(nn.Module):
                                              nn.Linear(ch, ch, bias=False))
 
         if s_state:
-            self.conv_s = nn.Sequential(Conv(ch, ch // 4, k=1))
+            # self.conv_s = nn.Sequential(Conv(ch, ch // 4, k=1))
             self.s_attention = nn.Conv2d(2, 1, 7, padding=3, bias=False)
 
     def forward(self, x):
