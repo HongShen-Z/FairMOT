@@ -492,9 +492,11 @@ class InitialTaskPredictionModule(nn.Module):
         # Per task feature refinement + decoding
         if input_channels == task_channels:
             channels = input_channels
-            self.refinement = nn.ModuleDict(
-                {task: nn.Sequential(BasicBlock(channels, channels), BasicBlock(channels, channels))
-                 for task in self.auxilary_tasks})
+            # self.refinement = nn.ModuleDict(
+            #     {task: nn.Sequential(BasicBlock(channels, channels), BasicBlock(channels, channels))
+            #      for task in self.auxilary_tasks})
+            self.refinement = nn.ModuleDict({task: BasicBlock(channels, channels)
+                                             for task in self.auxilary_tasks})
 
         else:
             refinement = {}

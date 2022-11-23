@@ -58,7 +58,7 @@ def test_emb(
     print('Extracting pedestrain features...')
     for batch_i, batch in enumerate(dataloader):
         t = time.time()
-        output = model(batch['input'].cuda())[-1]
+        output = model(batch['input'].cuda())
         id_head = _tranpose_and_gather_feat(output['id'], batch['ind'].cuda())
         id_head = id_head[batch['reg_mask'].cuda() > 0].contiguous()
         emb_scale = math.sqrt(2) * math.log(opt.nID - 1)
@@ -105,7 +105,7 @@ def test_emb(
     return tar_at_far
 
 if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     opt = opts().init()
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
     with torch.no_grad():
         tpr = test_emb(opt, batch_size=4)

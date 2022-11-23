@@ -89,7 +89,7 @@ def test_det(
         t = time.time()
         #seen += batch_size
 
-        output = model(imgs.cuda())[-1]
+        output = model(imgs.cuda())
         origin_shape = shapes[0]
         width = origin_shape[1]
         height = origin_shape[0]
@@ -209,7 +209,7 @@ def test_det(
     return mean_mAP, mean_R, mean_P
 
 if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     opt = opts().init()
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
     with torch.no_grad():
         map = test_det(opt, batch_size=4)
