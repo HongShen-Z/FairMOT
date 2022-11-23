@@ -897,7 +897,7 @@ class DLASeg(nn.Module):
         # x[3] (1,512,19,34)
 
         D = []
-        for i in range(self.last_level - self.first_level + 1):
+        for i in range(self.last_level - self.first_level):
             D.append(x[i].clone())
         self.ida_up(D, 0, len(D))
 
@@ -928,6 +928,6 @@ def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
                    pretrained=False,
                    down_ratio=down_ratio,
                    final_kernel=1,
-                   last_level=5,
+                   last_level=6,
                    head_conv=head_conv)
     return model
