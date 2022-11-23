@@ -564,9 +564,9 @@ class FPM(nn.Module):
         # Get shared representation
         concat = torch.cat([x['features_%s' % task] for task in self.auxilary_tasks], 1)
         B, C, H, W = concat.size()
-        # shared = self.non_linear(concat)
-        # mask = F.softmax(shared.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
-        mask = F.softmax(concat.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
+        shared = self.non_linear(concat)
+        mask = F.softmax(shared.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
+        # mask = F.softmax(concat.view(B, C // self.N, self.N, H, W), dim=2)  # Per task attention mask
         shared = torch.mul(mask, concat.view(B, C // self.N, self.N, H, W)).view(B, -1, H, W)
 
         # Perform dimensionality reduction
@@ -637,7 +637,6 @@ class MTAttention(nn.Module):
         self.max_pool = nn.AdaptiveMaxPool2d(1)
         self.sigmoid = nn.Sigmoid()
         # self.conv1 = Conv(ch, ch,k=1)
-        self.conv_s = Conv(ch, ch // 4, k=1)
 
         self.s_state = s_state
         self.c_state = c_state
@@ -649,7 +648,7 @@ class MTAttention(nn.Module):
                                              nn.Linear(ch, ch, bias=False))
 
         if s_state:
-            # self.conv_s = nn.Sequential(Conv(ch, ch // 4, k=1))
+            self.conv_s = nn.Sequential(Conv(ch, ch // 4, k=1))
             self.s_attention = nn.Conv2d(2, 1, 7, padding=3, bias=False)
 
     def forward(self, x):
@@ -714,9 +713,10 @@ class MTINet(nn.Module):
 
         self.scale_0 = InitialTaskPredictionModule(
             heads, self.auxilary_tasks, self.channels[0], self.channels[0])
+        self.fpm_scale_0 = FPM(self.auxilary_tasks, self.channels[0])
 
         # Distillation at multiple scales
-        self.distillation_scale_0 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[0])
+        # self.distillation_scale_0 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[0])
         # self.distillation_scale_1 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[1])
         # self.distillation_scale_2 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[2])
         # self.distillation_scale_3 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[3])
@@ -748,9 +748,10 @@ class MTINet(nn.Module):
 
         x_0 = self.scale_0(x)
         out['deep_supervision'] = {'scale_0': x_0}
+        features_0 = self.fpm_scale_0(x_0)
 
         # Distillation + Output
-        features_0 = self.distillation_scale_0(x_0)
+        # features_0 = self.distillation_scale_0(x_0)
         # features_1 = self.distillation_scale_1(x_1)
         # features_2 = self.distillation_scale_2(x_2)
         # features_3 = self.distillation_scale_3(x_3)
@@ -896,7 +897,7 @@ class DLASeg(nn.Module):
         # x[3] (1,512,19,34)
 
         D = []
-        for i in range(self.last_level - self.first_level):
+        for i in range(self.last_level - self.first_level + 1):
             D.append(x[i].clone())
         self.ida_up(D, 0, len(D))
 
