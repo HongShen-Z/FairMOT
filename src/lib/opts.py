@@ -112,7 +112,7 @@ class opts(object):
         self.parser.add_argument('--off_weight', type=float, default=1, help='loss weight for keypoint local offsets.')
         self.parser.add_argument('--wh_weight', type=float, default=0.1, help='loss weight for bounding box size.')
         self.parser.add_argument('--id_loss', default='ce', help='reid loss: ce | focal')
-        self.parser.add_argument('--id_weight', type=float, default=1, help='loss weight for id')
+        self.parser.add_argument('--id_weight', type=float, default=0.1, help='loss weight for id')
         self.parser.add_argument('--reid_dim', type=int, default=128, help='feature dim for reid')
         self.parser.add_argument('--ltrb', default=True, help='regress left, top, right, bottom of bbox')
         self.parser.add_argument('--multi_loss', default='gradnorm', help='multi_task loss: gradnorm|uncertainty|fix')

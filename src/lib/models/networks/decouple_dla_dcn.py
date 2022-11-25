@@ -61,6 +61,44 @@ class SABlock(nn.Module):
         return torch.mul(features, attention_mask)
 
 
+class ChannelAttention(nn.Module):
+    def __init__(self, channel, reduction=16):
+        super(ChannelAttention).__init__()
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.se = nn.Sequential(
+            nn.Conv2d(channel, channel // reduction, 1, bias=False),
+            nn.ReLU(),
+            nn.Conv2d(channel // reduction, channel, 1, bias=False)
+        )
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        residual = x
+        max_result = self.maxpool(x)
+        avg_result = self.avgpool(x)
+        max_out = self.se(max_result)
+        avg_out = self.se(avg_result)
+        output = x * self.sigmoid(max_out + avg_out)
+        return output + residual
+
+
+class SpatialAttention(nn.Module):
+    def __init__(self, kernel_size=7):
+        super(SpatialAttention).__init__()
+        self.conv = nn.Conv2d(2, 1, kernel_size=kernel_size, padding=kernel_size // 2)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        residual = x
+        max_result, _ = torch.max(x, dim=1, keepdim=True)
+        avg_result = torch.mean(x, dim=1, keepdim=True)
+        result = torch.cat([max_result, avg_result], 1)
+        output = self.conv(result)
+        output = x * self.sigmoid(output)
+        return output + residual
+
+
 class BasicBlock(nn.Module):
     def __init__(self, inplanes, planes, stride=1, dilation=1, downsample=None):
         super(BasicBlock, self).__init__()
@@ -368,19 +406,6 @@ def fill_fc_weights(layers):
                 nn.init.constant_(m.bias, 0)
 
 
-def weight_init(m):
-    if isinstance(m, nn.Linear):
-        nn.init.xavier_normal_(m.weight)
-        nn.init.constant_(m.bias, 0)
-    # 判断是否为conv2d，使用相应的初始化方式
-    elif isinstance(m, nn.Conv2d):
-        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-    # 是否为批归一化层
-    elif isinstance(m, nn.BatchNorm2d):
-        nn.init.constant_(m.weight, 1)
-        nn.init.constant_(m.bias, 0)
-
-
 def fill_up_weights(up):
     w = up.weight.data
     f = math.ceil(w.size(2) / 2)
@@ -591,8 +616,10 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = {}
 
         for t in self.tasks:
-            # other_tasks = [a for a in self.auxilary_tasks if a != t]
-            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in self.tasks})
+            other_tasks = [a for a in self.auxilary_tasks if a != t]
+            self.self_attention[t] = nn.ModuleDict({a: nn.Sequential(
+                ChannelAttention(channels),
+                SpatialAttention()) for a in other_tasks})
         self.self_attention = nn.ModuleDict(self.self_attention)
 
         # SEBlock
@@ -600,7 +627,7 @@ class MultiTaskDistillationModule(nn.Module):
 
     def forward(self, x):
         adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
-                        for a in self.tasks} for t in self.tasks}
+                        for a in self.tasks if a != t} for t in self.tasks}
         out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
                for t in self.tasks}
 
@@ -616,7 +643,7 @@ class MTINet(nn.Module):
         https://arxiv.org/pdf/2001.06902.pdf
     """
 
-    def __init__(self, heads, backbone_channels, heads_net):
+    def __init__(self, heads, backbone_channels):
         super(MTINet, self).__init__()
         # General
         self.tasks = heads.keys()
@@ -650,7 +677,21 @@ class MTINet(nn.Module):
         # self.distillation_scale_3 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[3])
 
         # Feature aggregation through HRNet heads
-        self.heads_net = heads_net
+        # self.heads_net = heads_net
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, std=0.001)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         # img_size = x.size()[-2:]
@@ -677,8 +718,6 @@ class MTINet(nn.Module):
         x_0 = self.scale_0(x)
         out['deep_supervision'] = {'scale_0': x_0}
 
-        # x_0 = self.fpm_0(x_0)
-
         # Distillation + Output
         features_0 = self.distillation_scale_0(x_0)
         # features_1 = self.distillation_scale_1(x_1)
@@ -687,10 +726,13 @@ class MTINet(nn.Module):
         # multi_scale_features = {t: [features_0[t], features_1[t], features_2[t], features_3[t]] for t in self.tasks}
 
         # Feature aggregation
+        # for t in self.tasks:
+        #     # out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
+        #     # out[t] = self.heads_net[t](multi_scale_features[t])
+        #     out[t] = self.heads_net[t](features_0[t])
+
         for t in self.tasks:
-            # out[t] = F.interpolate(self.heads_net[t](multi_scale_features[t]), img_size, mode='bilinear')
-            # out[t] = self.heads_net[t](multi_scale_features[t])
-            out[t] = self.heads_net[t](features_0[t])
+            out[t] = features_0[t]
 
         return out
 
@@ -778,10 +820,9 @@ class DLASeg(nn.Module):
 
         # heads_net = nn.ModuleDict(
         #     {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
-        heads_net = nn.ModuleDict(
+        self.heads_net = nn.ModuleDict(
             {head: CenterHead(channels[self.first_level:], heads, head, head_conv) for head in heads})
-        self.mti_net = MTINet(heads, channels[self.first_level:], heads_net)
-        self.mti_net.apply(weight_init)
+        self.mti_net = MTINet(heads, channels[self.first_level:])
 
         # self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
         # self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
@@ -849,6 +890,10 @@ class DLASeg(nn.Module):
         #     z[head] = self.__getattr__(head)(R)
 
         out = self.mti_net(D[-1])
+
+        for t in self.tasks:
+            out[t] = self.heads_net[t](out[t])
+
         return out
 
 
