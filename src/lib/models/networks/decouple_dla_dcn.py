@@ -63,7 +63,7 @@ class SABlock(nn.Module):
 
 class ChannelAttention(nn.Module):
     def __init__(self, channel, reduction=16):
-        super(ChannelAttention).__init__()
+        super(ChannelAttention, self).__init__()
         self.maxpool = nn.AdaptiveMaxPool2d(1)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.se = nn.Sequential(
@@ -85,7 +85,7 @@ class ChannelAttention(nn.Module):
 
 class SpatialAttention(nn.Module):
     def __init__(self, kernel_size=7):
-        super(SpatialAttention).__init__()
+        super(SpatialAttention, self).__init__()
         self.conv = nn.Conv2d(2, 1, kernel_size=kernel_size, padding=kernel_size // 2)
         self.sigmoid = nn.Sigmoid()
 
