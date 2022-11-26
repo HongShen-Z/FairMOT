@@ -818,6 +818,7 @@ class DLASeg(nn.Module):
         self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
                             [2 ** i for i in range(self.last_level - self.first_level)])
 
+        self.tasks = heads.keys()
         # heads_net = nn.ModuleDict(
         #     {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
         self.heads_net = nn.ModuleDict(
