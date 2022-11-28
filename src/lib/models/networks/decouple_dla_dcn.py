@@ -494,10 +494,6 @@ class ReidUp(nn.Module):
                                      output_padding=0,
                                      groups=out_channel, bias=False)
         self.Conv = nn.Conv2d(out_channel, 1, kernel_size=1, stride=1, bias=False)
-        # self.actf = nn.Sequential(
-        #     nn.BatchNorm2d(cho, momentum=BN_MOMENTUM),
-        #     nn.ReLU(inplace=True)
-        # )
         self.att = nn.Sigmoid()
 
         fill_up_weights(self.up)
@@ -517,11 +513,9 @@ class InitialTaskPredictionModule(nn.Module):
         # Per task feature refinement + decoding
         if input_channels == task_channels:
             channels = input_channels
-            # self.refinement = nn.ModuleDict(
-            #     {task: nn.Sequential(BasicBlock(channels, channels), BasicBlock(channels, channels))
-            #      for task in self.auxilary_tasks})
-            self.refinement = nn.ModuleDict({task: BasicBlock(channels, channels)
-                                             for task in self.auxilary_tasks})
+            self.refinement = nn.ModuleDict(
+                {task: nn.Sequential(BasicBlock(channels, channels), BasicBlock(channels, channels))
+                 for task in self.auxilary_tasks})
 
         else:
             refinement = {}
@@ -542,7 +536,9 @@ class InitialTaskPredictionModule(nn.Module):
                 in self.auxilary_tasks}
 
         else:
-            x = {t: features_curr_scale for t in self.auxilary_tasks}
+            # x = {t: features_curr_scale for t in self.auxilary_tasks}
+            x = {t: features_curr_scale['det'] for t in self.auxilary_tasks - {'id'}}
+            x['id'] = features_curr_scale['id']
 
         # Refinement + Decoding
         out = {}
@@ -616,10 +612,8 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = {}
 
         for t in self.tasks:
-            other_tasks = [a for a in self.auxilary_tasks if a != t]
-            self.self_attention[t] = nn.ModuleDict({a: nn.Sequential(
-                ChannelAttention(channels),
-                SpatialAttention()) for a in other_tasks})
+            # other_tasks = [a for a in self.auxilary_tasks if a != t]
+            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in self.tasks})
         self.self_attention = nn.ModuleDict(self.self_attention)
 
         # SEBlock
@@ -627,7 +621,7 @@ class MultiTaskDistillationModule(nn.Module):
 
     def forward(self, x):
         adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
-                        for a in self.tasks if a != t} for t in self.tasks}
+                        for a in self.tasks} for t in self.tasks}
         out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
                for t in self.tasks}
 
@@ -800,6 +794,58 @@ class HighResolutionHead(nn.Module):
         return x
 
 
+class FeatDecouple(nn.Module):
+    def __init__(self, backbone_channels):
+        super(FeatDecouple, self).__init__()
+        self.conv_s = nn.Conv2d(backbone_channels[1], backbone_channels[0], 1)
+        self.conv_c = nn.Conv2d(backbone_channels[3], backbone_channels[2], 1)
+        self.SA = nn.Sequential(SpatialAttention(), BasicBlock(backbone_channels[0], backbone_channels[0]))
+        self.CA = nn.Sequential(ChannelAttention(backbone_channels[2]),
+                                nn.Conv2d(backbone_channels[2], backbone_channels[0],
+                                          kernel_size=3, padding=1, bias=False),
+                                nn.BatchNorm2d(backbone_channels[0], momentum=BN_MOMENTUM),
+                                nn.ReLU(inplace=True),
+                                nn.ConvTranspose2d(backbone_channels[0], backbone_channels[0], 8, stride=4,
+                                                   padding=2, output_padding=0,
+                                                   groups=backbone_channels[0], bias=False),
+                                nn.Conv2d(backbone_channels[0], backbone_channels[0],
+                                          kernel_size=3, padding=1, bias=False),
+                                nn.BatchNorm2d(backbone_channels[0], momentum=BN_MOMENTUM),
+                                nn.ReLU(inplace=True))
+        self.w1 = nn.Parameter(torch.ones(1) * 0.5)
+        self.w2 = nn.Parameter(torch.ones(1) * 0.5)
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, std=0.001)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.ConvTranspose2d):
+                fill_up_weights(m)
+
+    def forward(self, x):
+        x0_h, x0_w = x[0].size(2), x[0].size(3)
+        x2_h, x2_w = x[2].size(2), x[2].size(3)
+        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
+        x_s = torch.add(x[0], self.conv_s(x1))
+        x_s = self.SA(x_s)
+
+        x3 = F.interpolate(x[3], (x2_h, x2_w), mode='bilinear')
+        x_c = torch.add(x[2], self.conv_c(x3))
+        x_c = self.CA(x_c)
+        x_det = self.w1 * x_s + (1 - self.w1) * x_c
+        x_id = self.w2 * x_s + (1 - self.w2) * x_c
+        return {'det': x_det, 'id': x_id}
+
+
 class DLASeg(nn.Module):
     def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
                  last_level, head_conv, out_channel=0):
@@ -809,28 +855,28 @@ class DLASeg(nn.Module):
         self.last_level = last_level
         self.base = globals()[base_name](pretrained=pretrained)
         channels = self.base.channels
-        scales = [2 ** i for i in range(len(channels[self.first_level:]))]  # [1, 2, 4, 8]
-        self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
+        backbone_channels = channels[self.first_level:]
+        scales = [2 ** i for i in range(len(backbone_channels))]  # [1, 2, 4, 8]
+        self.dla_up = DLAUp(self.first_level, backbone_channels, scales)
 
         if out_channel == 0:
             out_channel = channels[self.first_level]
 
-        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-                            [2 ** i for i in range(self.last_level - self.first_level)])
+        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+        #                     [2 ** i for i in range(self.last_level - self.first_level)])
+
+        self.feat_decouple = FeatDecouple(backbone_channels)
 
         self.tasks = heads.keys()
         # heads_net = nn.ModuleDict(
         #     {head: HighResolutionHead(channels[self.first_level:], heads[head]) for head in heads})
         self.heads_net = nn.ModuleDict(
-            {head: CenterHead(channels[self.first_level:], heads, head, head_conv) for head in heads})
-        self.mti_net = MTINet(heads, channels[self.first_level:])
+            {head: CenterHead(backbone_channels, heads, head, head_conv) for head in heads})
+        self.mti_net = MTINet(heads, backbone_channels)
 
         # self.RA_3 = ReidUp(channels[-1], channels[-2], 2)
         # self.RA_2 = ReidUp(channels[-2], channels[-3], 2)
         # self.RA_1 = ReidUp(channels[-3], channels[-4], 2)
-        # self.DA_3 = ReidUp(channels[-1], channels[-2], 2)
-        # self.DA_2 = ReidUp(channels[-2], channels[-3], 2)
-        # self.DA_1 = ReidUp(channels[-3], channels[-4], 2)
 
         # self.heads = heads
         # # self.det_heads = dict([(key, heads[key]) for key in ['hm', 'wh', 'reg']])
@@ -867,15 +913,12 @@ class DLASeg(nn.Module):
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        D = []
-        for i in range(self.last_level - self.first_level):
-            D.append(x[i].clone())
-        self.ida_up(D, 0, len(D))
+        # D = []
+        # for i in range(self.last_level - self.first_level):
+        #     D.append(x[i].clone())
+        # self.ida_up(D, 0, len(D))
 
-        # det_att = self.DA_3(x[3])
-        # det_att = self.DA_2(x[2] * det_att)
-        # det_att = self.DA_1(x[1] * det_att)
-        # D = x[0] * det_att
+        feat = self.feat_decouple(x)
 
         # reid_att = self.RA_3(x[3])
         # reid_att = self.RA_2(x[2] * reid_att)
@@ -885,12 +928,9 @@ class DLASeg(nn.Module):
         # z = {}
         # for head in self.heads:
         #     z[head] = self.__getattr__(head)(D[-1])
-        #     z[head] = self.__getattr__(head)(D)
 
-        # for head in self.reid_heads:
-        #     z[head] = self.__getattr__(head)(R)
-
-        out = self.mti_net(D[-1])
+        # out = self.mti_net(D[-1])
+        out = self.mti_net(feat)
 
         for t in self.tasks:
             out[t] = self.heads_net[t](out[t])
