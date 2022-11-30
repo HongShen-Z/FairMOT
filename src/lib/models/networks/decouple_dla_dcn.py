@@ -797,7 +797,7 @@ class HighResolutionHead(nn.Module):
 class FeatDecouple(nn.Module):
     def __init__(self, backbone_channels):
         super(FeatDecouple, self).__init__()
-        print(backbone_channels)
+        print('5', backbone_channels)
         self.conv_s = nn.Conv2d(backbone_channels[1], backbone_channels[0], 1)
         self.conv_c = nn.Conv2d(backbone_channels[3], backbone_channels[2], 1)
         self.SA = nn.Sequential(SpatialAttention(), BasicBlock(backbone_channels[0], backbone_channels[0]))
@@ -857,9 +857,12 @@ class DLASeg(nn.Module):
         self.last_level = last_level
         self.base = globals()[base_name](pretrained=pretrained)
         channels = self.base.channels
+        print('1', channels)
         backbone_channels = channels[self.first_level:]
+        print('2', backbone_channels)
         scales = [2 ** i for i in range(len(backbone_channels))]  # [1, 2, 4, 8]
         self.dla_up = DLAUp(self.first_level, backbone_channels, scales)
+        print('3', backbone_channels)
 
         # if out_channel == 0:
         #     out_channel = channels[self.first_level]
@@ -868,6 +871,7 @@ class DLASeg(nn.Module):
         #                     [2 ** i for i in range(self.last_level - self.first_level)])
 
         self.feat_decouple = FeatDecouple(backbone_channels)
+        print('4', backbone_channels)
 
         self.tasks = heads.keys()
         # heads_net = nn.ModuleDict(
