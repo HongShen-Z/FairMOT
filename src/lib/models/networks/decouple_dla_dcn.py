@@ -466,7 +466,7 @@ class DLAUp(nn.Module):
         super(DLAUp, self).__init__()
         self.startp = startp
         if in_channels is None:
-            in_channels = channels
+            in_channels = channels.copy()
         self.channels = channels
         channels = list(channels)
         scales = np.array(scales, dtype=int)
@@ -797,7 +797,6 @@ class HighResolutionHead(nn.Module):
 class FeatDecouple(nn.Module):
     def __init__(self, backbone_channels):
         super(FeatDecouple, self).__init__()
-        print('5', backbone_channels)
         self.conv_s = nn.Conv2d(backbone_channels[1], backbone_channels[0], 1)
         self.conv_c = nn.Conv2d(backbone_channels[3], backbone_channels[2], 1)
         self.SA = nn.Sequential(SpatialAttention(), BasicBlock(backbone_channels[0], backbone_channels[0]))
@@ -842,6 +841,7 @@ class FeatDecouple(nn.Module):
         x3 = F.interpolate(x[3], (x2_h, x2_w), mode='bilinear')
         x_c = torch.add(x[2], self.conv_c(x3))
         x_c = self.CA(x_c)
+
         print(self.w1, self.w2)
         x_det = self.w1 * x_s + (1 - self.w1) * x_c
         x_id = self.w2 * x_s + (1 - self.w2) * x_c
@@ -857,7 +857,6 @@ class DLASeg(nn.Module):
         self.last_level = last_level
         self.base = globals()[base_name](pretrained=pretrained)
         channels = self.base.channels
-        print('1', channels)
         backbone_channels = channels[self.first_level:]
         print('2', backbone_channels)
         scales = [2 ** i for i in range(len(backbone_channels))]  # [1, 2, 4, 8]
