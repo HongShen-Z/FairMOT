@@ -73,6 +73,8 @@ def main(opt):
         # for param_group in optimizer.param_groups:
         #     param_group['lr'] = lrs[epoch]
         print('epoch: {}, lr: {}'.format(epoch, optimizer.param_groups[0]['lr']))
+        print(model.feat_decouple.w1.values(), model.feat_decouple.w2.values())
+
         log_dict_train, _ = trainer.train(epoch, train_loader)
         logger.write('epoch: {} |'.format(epoch))
         for k, v in log_dict_train.items():

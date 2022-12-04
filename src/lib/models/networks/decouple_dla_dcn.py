@@ -673,7 +673,6 @@ class MTINet(nn.Module):
         # Feature aggregation through HRNet heads
         # self.heads_net = heads_net
 
-    def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out')
@@ -797,25 +796,19 @@ class HighResolutionHead(nn.Module):
 class FeatDecouple(nn.Module):
     def __init__(self, backbone_channels):
         super(FeatDecouple, self).__init__()
-        self.conv_s = nn.Conv2d(backbone_channels[1], backbone_channels[0], 1)
-        self.conv_c = nn.Conv2d(backbone_channels[3], backbone_channels[2], 1)
-        self.SA = nn.Sequential(SpatialAttention(), BasicBlock(backbone_channels[0], backbone_channels[0]))
-        self.CA = nn.Sequential(ChannelAttention(backbone_channels[2]),
-                                nn.Conv2d(backbone_channels[2], backbone_channels[0],
-                                          kernel_size=3, padding=1, bias=False),
-                                nn.BatchNorm2d(backbone_channels[0], momentum=BN_MOMENTUM),
-                                nn.ReLU(inplace=True),
+        self.ida_s = IDAUp(backbone_channels[0], backbone_channels[:2], [1, 2])
+        self.SA = nn.Sequential(SABlock(backbone_channels[0], backbone_channels[0]),
+                                DeformConv(backbone_channels[0], backbone_channels[0]))
+        self.ida_c = IDAUp(backbone_channels[2], backbone_channels[2:], [1, 2])
+        self.CA = nn.Sequential(SEBlock(backbone_channels[2]),
+                                DeformConv(backbone_channels[2], backbone_channels[0]),
                                 nn.ConvTranspose2d(backbone_channels[0], backbone_channels[0], 8, stride=4,
                                                    padding=2, output_padding=0,
                                                    groups=backbone_channels[0], bias=False),
-                                nn.Conv2d(backbone_channels[0], backbone_channels[0],
-                                          kernel_size=3, padding=1, bias=False),
-                                nn.BatchNorm2d(backbone_channels[0], momentum=BN_MOMENTUM),
-                                nn.ReLU(inplace=True))
+                                DeformConv(backbone_channels[0], backbone_channels[0]))
         self.w1 = nn.Parameter(torch.ones(1) * 0.5)
         self.w2 = nn.Parameter(torch.ones(1) * 0.5)
 
-    def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out')
@@ -832,17 +825,10 @@ class FeatDecouple(nn.Module):
                 fill_up_weights(m)
 
     def forward(self, x):
-        x0_h, x0_w = x[0].size(2), x[0].size(3)
-        x2_h, x2_w = x[2].size(2), x[2].size(3)
-        x1 = F.interpolate(x[1], (x0_h, x0_w), mode='bilinear')
-        x_s = torch.add(x[0], self.conv_s(x1))
-        x_s = self.SA(x_s)
+        x_s = self.SA(self.ida_s(x[:2], 0, 2)[-1])
+        x_c = self.CA(self.ida_c(x[2:], 0, 2)[-1])
 
-        x3 = F.interpolate(x[3], (x2_h, x2_w), mode='bilinear')
-        x_c = torch.add(x[2], self.conv_c(x3))
-        x_c = self.CA(x_c)
-
-        print(self.w1, self.w2)
+        # print(self.w1, self.w2)
         x_det = self.w1 * x_s + (1 - self.w1) * x_c
         x_id = self.w2 * x_s + (1 - self.w2) * x_c
         return {'det': x_det, 'id': x_id}
