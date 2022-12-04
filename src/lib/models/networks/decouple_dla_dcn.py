@@ -835,7 +835,6 @@ class FeatDecouple(nn.Module):
         self.ida_c(C, 0, 2)
         x_c = self.CA(C[-1])
 
-        # print(self.w1, self.w2)
         x_det = self.w1 * x_s + (1 - self.w1) * x_c
         x_id = self.w2 * x_s + (1 - self.w2) * x_c
         return {'det': x_det, 'id': x_id}
