@@ -825,8 +825,15 @@ class FeatDecouple(nn.Module):
                 fill_up_weights(m)
 
     def forward(self, x):
-        x_s = self.SA(self.ida_s(x[:2], 0, 2)[-1])
-        x_c = self.CA(self.ida_c(x[2:], 0, 2)[-1])
+        S = []
+        C = []
+        for i in range(2):
+            S.append(x[i].clone())
+            C.append(x[i+2].clone())
+        self.ida_s(S, 0, 2)
+        x_s = self.SA(S[-1])
+        self.ida_c(C, 0, 2)
+        x_c = self.CA(C[-1])
 
         # print(self.w1, self.w2)
         x_det = self.w1 * x_s + (1 - self.w1) * x_c
