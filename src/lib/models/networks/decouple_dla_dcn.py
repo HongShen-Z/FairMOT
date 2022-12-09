@@ -536,9 +536,9 @@ class InitialTaskPredictionModule(nn.Module):
                 in self.auxilary_tasks}
 
         else:
-            # x = {t: features_curr_scale for t in self.auxilary_tasks}
-            x = {t: features_curr_scale['det'] for t in self.auxilary_tasks - {'id'}}
-            x['id'] = features_curr_scale['id']
+            x = {t: features_curr_scale for t in self.auxilary_tasks}
+            # x = {t: features_curr_scale['det'] for t in self.auxilary_tasks - {'id'}}
+            # x['id'] = features_curr_scale['id']
 
         # Refinement + Decoding
         out = {}
@@ -853,13 +853,13 @@ class DLASeg(nn.Module):
         scales = [2 ** i for i in range(len(backbone_channels))]  # [1, 2, 4, 8]
         self.dla_up = DLAUp(self.first_level, backbone_channels, scales)
 
-        # if out_channel == 0:
-        #     out_channel = channels[self.first_level]
+        if out_channel == 0:
+            out_channel = channels[self.first_level]
 
-        # self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
-        #                     [2 ** i for i in range(self.last_level - self.first_level)])
+        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+                            [2 ** i for i in range(self.last_level - self.first_level)])
 
-        self.feat_decouple = FeatDecouple(backbone_channels)
+        # self.feat_decouple = FeatDecouple(backbone_channels)
 
         self.tasks = heads.keys()
         # heads_net = nn.ModuleDict(
@@ -907,12 +907,12 @@ class DLASeg(nn.Module):
         # x[2] (1,256,38,68)
         # x[3] (1,512,19,34)
 
-        # D = []
-        # for i in range(self.last_level - self.first_level):
-        #     D.append(x[i].clone())
-        # self.ida_up(D, 0, len(D))
+        D = []
+        for i in range(self.last_level - self.first_level):
+            D.append(x[i].clone())
+        self.ida_up(D, 0, len(D))
 
-        feat = self.feat_decouple(x)
+        # feat = self.feat_decouple(x)
 
         # reid_att = self.RA_3(x[3])
         # reid_att = self.RA_2(x[2] * reid_att)
@@ -923,8 +923,8 @@ class DLASeg(nn.Module):
         # for head in self.heads:
         #     z[head] = self.__getattr__(head)(D[-1])
 
-        # out = self.mti_net(D[-1])
-        out = self.mti_net(feat)
+        out = self.mti_net(D[-1])
+        # out = self.mti_net(feat)
 
         for t in self.tasks:
             out[t] = self.heads_net[t](out[t])
