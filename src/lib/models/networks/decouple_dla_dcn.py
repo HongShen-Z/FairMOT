@@ -536,9 +536,9 @@ class InitialTaskPredictionModule(nn.Module):
                 in self.auxilary_tasks}
 
         else:
-            x = {t: features_curr_scale for t in self.auxilary_tasks}
-            # x = {t: features_curr_scale['det'] for t in self.auxilary_tasks - {'id'}}
-            # x['id'] = features_curr_scale['id']
+            # x = {t: features_curr_scale for t in self.auxilary_tasks}
+            x = {t: features_curr_scale[0] for t in self.auxilary_tasks - {'id'}}
+            x['id'] = features_curr_scale[1]
 
         # Refinement + Decoding
         out = {}
@@ -829,7 +829,7 @@ class FeatDecouple(nn.Module):
         C = []
         for i in range(2):
             S.append(x[i].clone())
-            C.append(x[i+2].clone())
+            C.append(x[i + 2].clone())
         self.ida_s(S, 0, 2)
         x_s = self.SA(S[-1])
         self.ida_c(C, 0, 2)
@@ -856,7 +856,9 @@ class DLASeg(nn.Module):
         if out_channel == 0:
             out_channel = channels[self.first_level]
 
-        self.ida_up = IDAUp(out_channel, channels[self.first_level:self.last_level],
+        self.ida_det = IDAUp(out_channel, channels[self.first_level:self.last_level],
+                             [2 ** i for i in range(self.last_level - self.first_level)])
+        self.ida_id = IDAUp(out_channel, channels[self.first_level:self.last_level],
                             [2 ** i for i in range(self.last_level - self.first_level)])
 
         # self.feat_decouple = FeatDecouple(backbone_channels)
@@ -908,9 +910,12 @@ class DLASeg(nn.Module):
         # x[3] (1,512,19,34)
 
         D = []
+        R = []
         for i in range(self.last_level - self.first_level):
             D.append(x[i].clone())
-        self.ida_up(D, 0, len(D))
+            R.append(x[i].clone())
+        self.ida_det(D, 0, len(D))
+        self.ida_id(R, 0, len(R))
 
         # feat = self.feat_decouple(x)
 
@@ -923,7 +928,7 @@ class DLASeg(nn.Module):
         # for head in self.heads:
         #     z[head] = self.__getattr__(head)(D[-1])
 
-        out = self.mti_net(D[-1])
+        out = self.mti_net([D[-1], R[-1]])
         # out = self.mti_net(feat)
 
         for t in self.tasks:
