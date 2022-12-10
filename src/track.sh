@@ -9,9 +9,9 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
-python track_half.py mot --val_mot17 True --load_model ../exp/abl_fo_arch-dev1/models/model_last.pth \
---conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_fo_arch-dev1
-python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_fo_arch-dev1' --BENCHMARK 'MOT17' \
+python track_half.py mot --val_mot17 True --load_model ../exp/abl_fo_arch-dev3/models/model_last.pth \
+--conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_fo_arch-dev3
+python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_fo_arch-dev3' --BENCHMARK 'MOT17' \
 --METRICS 'HOTA' 'CLEAR' 'Identity' --SKIP_SPLIT_FOL True --USE_PARALLEL True --NUM_PARALLEL_CORES 2 \
 --GT_LOC_FORMAT '{gt_folder}/{seq}/gt/gt_val_half.txt' \
 --TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos' \
