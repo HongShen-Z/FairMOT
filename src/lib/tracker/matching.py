@@ -72,11 +72,15 @@ def ious(atlbrs, btlbrs):
 
 
 def gious(bboxes1, bboxes2):
-    # bboxes1 and bboxes2 are torch tensors of shape (n, 4) and (m, 4) respectively
+    # bboxes1 and bboxes2 are np.ndarray of shape (n, 4) and (m, 4) respectively
     # the output is a torch tensor of shape (n, m) with the GIoU values
     giou = torch.zeros((len(bboxes1), len(bboxes2)), dtype=torch.float)
     if len(bboxes1) * len(bboxes2) == 0:
         return giou
+
+    # convert the np.ndarray to torch tensors
+    bboxes1 = torch.from_numpy(bboxes1)
+    bboxes2 = torch.from_numpy(bboxes2)
 
     # expand the bboxes to broadcastable shapes
     bboxes1 = bboxes1[:, None, :]
