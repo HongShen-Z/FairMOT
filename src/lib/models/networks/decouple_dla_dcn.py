@@ -538,12 +538,12 @@ class FPM(nn.Module):
         self.shared_channels = int(self.N * per_task_channels)
 
         # Non-linear function f
-        downsample = nn.Sequential(nn.Conv2d(self.shared_channels, self.shared_channels // 4, 1, bias=False),
-                                   nn.BatchNorm2d(self.shared_channels // 4))
-        self.non_linear = nn.Sequential(
-            BasicBlock(self.shared_channels, self.shared_channels // 4, downsample=downsample),
-            BasicBlock(self.shared_channels // 4, self.shared_channels // 4),
-            nn.Conv2d(self.shared_channels // 4, self.shared_channels, 1))
+        # downsample = nn.Sequential(nn.Conv2d(self.shared_channels, self.shared_channels // 4, 1, bias=False),
+        #                            nn.BatchNorm2d(self.shared_channels // 4))
+        # self.non_linear = nn.Sequential(
+        #     BasicBlock(self.shared_channels, self.shared_channels // 4, downsample=downsample),
+        #     BasicBlock(self.shared_channels // 4, self.shared_channels // 4),
+        #     nn.Conv2d(self.shared_channels // 4, self.shared_channels, 1))
 
         # Dimensionality reduction
         downsample = nn.Sequential(nn.Conv2d(self.shared_channels, self.per_task_channels, 1, bias=False),
@@ -569,7 +569,8 @@ class FPM(nn.Module):
         # Per task squeeze-and-excitation
         out = {}
         for task in self.auxilary_tasks:
-            out[task] = self.se[task](shared) + x['features_%s' % task]
+            # out[task] = self.se[task](shared) + x['features_%s' % task]
+            out['features_%s' % task] = self.se[task](shared) + x['features_%s' % task]
 
         return out
 
@@ -588,15 +589,22 @@ class MultiTaskDistillationModule(nn.Module):
         self.self_attention = {}
 
         for t in self.tasks:
-            other_tasks = [a for a in self.auxilary_tasks if a != t]
-            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in other_tasks})
+            # other_tasks = [a for a in self.auxilary_tasks if a != t]
+            self.self_attention[t] = nn.ModuleDict({a: SABlock(channels, channels) for a in self.tasks})
         self.self_attention = nn.ModuleDict(self.self_attention)
+
+        # SEBlock
+        self.se = nn.ModuleDict({task: SEBlock(channels) for task in self.tasks})
 
     def forward(self, x):
         adapters = {t: {a: self.self_attention[t][a](x['features_%s' % a])
-                        for a in self.auxilary_tasks if a != t} for t in self.tasks}
+                        for a in self.tasks} for t in self.tasks}
         out = {t: x['features_%s' % t] + torch.sum(torch.stack([v for v in adapters[t].values()]), dim=0)
                for t in self.tasks}
+
+        for t in self.tasks:
+            out[t] = self.se[t](out[t])
+
         return out
 
 
@@ -629,6 +637,7 @@ class MTINet(nn.Module):
         # self.scale_3 = InitialTaskPredictionModule(
         #     heads, self.auxilary_tasks, self.channels[3], self.channels[3])
 
+        # self.fpm_0 = FPM(self.auxilary_tasks, self.channels[0])
         self.scale_0 = InitialTaskPredictionModule(
             heads, self.auxilary_tasks, self.channels[0], self.channels[0])
 
@@ -665,6 +674,8 @@ class MTINet(nn.Module):
 
         x_0 = self.scale_0(x)
         out['deep_supervision'] = {'scale_0': x_0}
+
+        # x_0 = self.fpm_0(x_0)
 
         # Distillation + Output
         features_0 = self.distillation_scale_0(x_0)
@@ -722,7 +733,7 @@ class HighResolutionHead(nn.Module):
             nn.Conv2d(
                 in_channels=last_inp_channels,
                 out_channels=256,
-                kernel_size=1,
+                kernel_size=3,
                 stride=1,
                 padding=0),
             nn.BatchNorm2d(256, momentum=0.1),

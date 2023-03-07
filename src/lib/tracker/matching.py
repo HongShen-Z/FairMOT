@@ -6,7 +6,8 @@ from scipy.spatial.distance import cdist
 
 from cython_bbox import bbox_overlaps as bbox_ious
 from tracking_utils import kalman_filter
-import time
+import torch
+
 
 def merge_matches(m1, m2, shape):
     O,P,Q = shape
@@ -70,9 +71,52 @@ def ious(atlbrs, btlbrs):
     return ious
 
 
-def iou_distance(atracks, btracks):
+def gious(bboxes1, bboxes2):
+    # bboxes1 and bboxes2 are torch tensors of shape (n, 4) and (m, 4) respectively
+    # the output is a torch tensor of shape (n, m) with the GIoU values
+    giou = torch.zeros((len(bboxes1), len(bboxes2)), dtype=torch.float)
+    if len(bboxes1) * len(bboxes2) == 0:
+        return giou
+
+    # expand the bboxes to broadcastable shapes
+    bboxes1 = bboxes1[:, None, :]
+    bboxes2 = bboxes2[None, :, :]
+
+    # compute the widths and heights of the bboxes
+    w1 = bboxes1[..., 2] - bboxes1[..., 0]
+    h1 = bboxes1[..., 3] - bboxes1[..., 1]
+    w2 = bboxes2[..., 2] - bboxes2[..., 0]
+    h2 = bboxes2[..., 3] - bboxes2[..., 1]
+
+    # compute the areas of the bboxes
+    area1 = w1 * h1
+    area2 = w2 * h2
+
+    # compute the coordinates of the intersection and the union
+    inter_max_xy = torch.min(bboxes1[..., 2:], bboxes2[..., 2:])
+    inter_min_xy = torch.max(bboxes1[..., :2], bboxes2[..., :2])
+    out_max_xy = torch.max(bboxes1[..., 2:], bboxes2[..., 2:])
+    out_min_xy = torch.min(bboxes1[..., :2], bboxes2[..., :2])
+
+    # compute the areas of the intersection and the union
+    inter = torch.clamp((inter_max_xy - inter_min_xy), min=0)
+    inter_area = inter[..., 0] * inter[..., 1]
+    outer = torch.clamp((out_max_xy - out_min_xy), min=0)
+    outer_area = outer[..., 0] * outer[..., 1]
+    union = area1 + area2 - inter_area
+
+    # compute the IoU and the GIoU
+    iou = inter_area / union
+    gious = iou - (outer_area - union) / outer_area
+    gious = torch.clamp(gious, min=-1.0, max=1.0)
+
+    return gious
+
+
+def iou_distance(atracks, btracks, p='iou'):
     """
     Compute cost based on IoU
+    :param p: iou/giou
     :type atracks: list[STrack]
     :type btracks: list[STrack]
 
@@ -85,7 +129,10 @@ def iou_distance(atracks, btracks):
     else:
         atlbrs = [track.tlbr for track in atracks]
         btlbrs = [track.tlbr for track in btracks]
-    _ious = ious(atlbrs, btlbrs)
+    if p == 'giou':
+        _ious = gious(atlbrs, btlbrs)
+    else:
+        _ious = ious(atlbrs, btlbrs)
     cost_matrix = 1 - _ious
 
     return cost_matrix
