@@ -14,7 +14,7 @@ python track_half.py mot --val_mot17 True --load_model ../exp/abl_fo_arch/models
 python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_fo_arch' --BENCHMARK 'MOT17' \
 --METRICS 'HOTA' 'CLEAR' 'Identity' --SKIP_SPLIT_FOL True --USE_PARALLEL True --NUM_PARALLEL_CORES 2 \
 --GT_LOC_FORMAT '{gt_folder}/{seq}/gt/gt_val_half.txt' \
---TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos' \
+--TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos/abl' \
 --GT_FOLDER '/seu_share/home/dijunyong/220205723/datasets/MOT/data/gt/mot_challenge/'
 #python track.py mot --val_mot20 True --load_model ../exp/mot/ch_dla34_gd0.5/models/model_60.pth --conf_thres 0.3 \
 #--gpus $CUDA_VISIBLE_DEVICES --exp_id MOT20_ch_gd0.5
