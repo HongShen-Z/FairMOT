@@ -120,8 +120,6 @@ class JDETracker(object):
         # vis
         print(torch.max(hm))
         print(len(dets))
-        # 读取原始图片
-        orig_img = cv2.imread('../000045.jpg')
 
         feature_map = torch.squeeze(hm)
         feature_map = np.asarray(feature_map)
@@ -131,9 +129,9 @@ class JDETracker(object):
         # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
         heatmap = cv2.applyColorMap(feature_map, cv2.COLORMAP_JET)
         # 将热力图调整到和原始图片一样的大小
-        heatmap = cv2.resize(heatmap, (orig_img.shape[1], orig_img.shape[0]))
+        heatmap = cv2.resize(heatmap, (img0.shape[1], img0.shape[0]))
         # 将热力图和原始图片按一定比例叠加，得到最终的图片
-        img_heatmap = cv2.addWeighted(orig_img, 0.6, heatmap, 0.4, 0)
+        img_heatmap = cv2.addWeighted(img0, 0.6, heatmap, 0.4, 0)
         # 保存图片为heatmap.jpg文件
         cv2.imwrite('../heatmap.jpg', img_heatmap)
 
