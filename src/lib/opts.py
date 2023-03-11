@@ -72,7 +72,7 @@ class opts(object):
                                  help='heatmap generating coefficient to control sigma for gaussian kernel')
 
         # test
-        self.parser.add_argument('--K', type=int, default=500, help='max number of output objects.')
+        self.parser.add_argument('--K', type=int, default=400, help='max number of output objects.')
         self.parser.add_argument('--not_prefetch_test', action='store_true',
                                  help='not use parallal data pre-processing.')
         self.parser.add_argument('--fix_res', action='store_true',

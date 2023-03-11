@@ -147,7 +147,7 @@ class JDETracker(object):
 
 if __name__ == '__main__':
     opt = opts().init()
-    img_path = '../000045.jpg'
+    img_path = '../000400.jpg'
     img, img0 = load_img(img_path)
     blob = torch.from_numpy(img).unsqueeze(0)
     tracker = JDETracker(opt)
