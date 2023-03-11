@@ -1,8 +1,8 @@
-from models.decode import mot_decode
-from models.model import create_model, load_model
-from models.utils import _tranpose_and_gather_feat
-from tracking_utils.utils import *
-from utils.post_process import ctdet_post_process
+from ..models.decode import mot_decode
+from ..models.model import create_model, load_model
+from ..models.utils import _tranpose_and_gather_feat
+from ..tracking_utils.utils import *
+from post_process import ctdet_post_process
 import cv2
 from opts import opts
 
