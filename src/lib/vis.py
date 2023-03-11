@@ -119,6 +119,8 @@ class JDETracker(object):
         id_feature = id_feature[remain_inds]
 
         # vis
+        print(torch.max(hm))
+        print(len(dets))
         # 读取原始图片
         orig_img = cv2.imread('../000045.jpg')
 
