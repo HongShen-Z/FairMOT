@@ -122,9 +122,7 @@ class JDETracker(object):
 
         for i in range(0, dets.shape[0]):
             bbox = dets[i][0:4]
-            cv2.rectangle(img0, (bbox[0], bbox[1]),
-                          (bbox[2], bbox[3]),
-                          (0, 255, 0), 2)
+            cv2.rectangle(img0, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
         cv2.imwrite('../../det.jpg', img0)
 
         print(hm.shape)
