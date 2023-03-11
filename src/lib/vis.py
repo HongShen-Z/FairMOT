@@ -84,11 +84,11 @@ class JDETracker(object):
         return results
 
     def update(self, im_blob, img0):
-        self.frame_id += 1
+        print(img0.shape, img.shape)
         width = img0.shape[1]
         height = img0.shape[0]
-        inp_height = im_blob.shape[2]
-        inp_width = im_blob.shape[3]
+        inp_height = im_blob.shape[1]
+        inp_width = im_blob.shape[2]
         c = np.array([width / 2., height / 2.], dtype=np.float32)
         s = max(float(inp_width) / float(inp_height) * height, width) * 1.0
         meta = {'c': c, 's': s,
