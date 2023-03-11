@@ -9,6 +9,6 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fairmot
-python demo.py mot --load_model ../models/fairmot_dla34.pth --conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES
+python demo.py mot --load_model ../exp/abl_fo_arch-dev/models/model_last.pth --conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES
 
 #~/.cache/torch/checkpoints/yolov5s.pt
