@@ -123,6 +123,7 @@ class JDETracker(object):
         orig_img = cv2.imread('../000045.jpg')
 
         feature_map = torch.squeeze(hm)
+        feature_map = np.asarray(feature_map)
 
         # 将特征图数据归一化到0-255范围，并转换为整数类型
         feature_map = (feature_map * 255).astype(np.uint8)
