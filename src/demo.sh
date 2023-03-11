@@ -5,7 +5,7 @@
 #BSUB -q gpu_v100
 #BSUB -gpu "num=1:mode=exclusive_process:aff=yes"
 
-module load anaconda3
+module load fair
 source activate
 conda deactivate
 conda activate fairmot

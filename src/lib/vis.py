@@ -137,7 +137,7 @@ class JDETracker(object):
         # 将热力图调整到和原始图片一样的大小
         heatmap = cv2.resize(heatmap, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
         # 将热力图和原始图片按一定比例叠加，得到最终的图片
-        img_heatmap = cv2.addWeighted(img0, 0.6, heatmap, 0.4, 0)
+        img_heatmap = cv2.addWeighted(img0, 0.5, heatmap, 0.5, 0)
         # 保存图片为heatmap.jpg文件
         cv2.imwrite('../heatmap.jpg', img_heatmap)
 
