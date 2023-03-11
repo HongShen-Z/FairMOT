@@ -121,25 +121,25 @@ class JDETracker(object):
         print(torch.max(hm))
         print(len(dets))
 
-        for i in range(0, dets.shape[0]):
-            bbox = dets[i][0:4]
-            print(bbox)
-            cv2.rectangle(img0, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
-        cv2.imwrite('../det.jpg', img0)
+        # for i in range(0, dets.shape[0]):
+        #     bbox = dets[i][0:4]
+        #     print(bbox)
+        #     cv2.rectangle(img0, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
+        # cv2.imwrite('../det.jpg', img0)
 
-        # feature_map = torch.squeeze(hm)
-        # feature_map = np.asarray(feature_map)
-        #
-        # # 将特征图数据归一化到0-255范围，并转换为整数类型
-        # feature_map = (feature_map * 255).astype(np.uint8)
-        # # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
-        # heatmap = cv2.applyColorMap(feature_map, cv2.COLORMAP_JET)
-        # # 将热力图调整到和原始图片一样的大小
-        # heatmap = cv2.resize(heatmap, (img0.shape[1], img0.shape[0]))
-        # # 将热力图和原始图片按一定比例叠加，得到最终的图片
-        # img_heatmap = cv2.addWeighted(img0, 0.6, heatmap, 0.4, 0)
-        # # 保存图片为heatmap.jpg文件
-        # cv2.imwrite('../heatmap.jpg', img_heatmap)
+        feature_map = torch.squeeze(hm)
+        feature_map = np.asarray(feature_map)
+
+        # 将特征图数据归一化到0-255范围，并转换为整数类型
+        feature_map = (feature_map * 255).astype(np.uint8)
+        # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
+        heatmap = cv2.applyColorMap(feature_map, cv2.COLORMAP_JET)
+        # 将热力图调整到和原始图片一样的大小
+        heatmap = cv2.resize(heatmap, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
+        # 将热力图和原始图片按一定比例叠加，得到最终的图片
+        img_heatmap = cv2.addWeighted(img0, 0.6, heatmap, 0.4, 0)
+        # 保存图片为heatmap.jpg文件
+        cv2.imwrite('../heatmap.jpg', img_heatmap)
 
         print(hm.shape)
 
