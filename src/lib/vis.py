@@ -98,7 +98,6 @@ class JDETracker(object):
 
         ''' Step 1: Network forward, get detections & embeddings'''
         with torch.no_grad():
-            im_blob = torch.from_numpy(im_blob)
             output = self.model(im_blob)
             hm = output['hm'].sigmoid_()
             wh = output['wh']
@@ -145,6 +144,6 @@ if __name__ == '__main__':
     opt = opts().init()
     img_path = '../000045.jpg'
     img, img0 = load_img(img_path)
-    img = np.expand_dims(img, 0)
+    blob = torch.from_numpy(img).unsqueeze(0)
     tracker = JDETracker(opt)
     tracker.update(img, img0)
