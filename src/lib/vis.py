@@ -133,7 +133,7 @@ class JDETracker(object):
         # 将特征图数据归一化到0-255范围，并转换为整数类型
         feature_map = (feature_map * 255).astype(np.uint8)
         # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
-        heatmap = cv2.applyColorMap(feature_map, cv2.COLORMAP_JET)
+        heatmap = cv2.applyColorMap(feature_map, cv2.COLORMAP_HOT)
         # 将热力图调整到和原始图片一样的大小
         heatmap = cv2.resize(heatmap, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
         # 将热力图和原始图片按一定比例叠加，得到最终的图片
