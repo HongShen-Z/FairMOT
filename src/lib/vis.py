@@ -134,6 +134,6 @@ if __name__ == '__main__':
     opt = opts().init()
     img_path = '/seu_share/home/dijunyong/220205723/datasets/MOT/MOT16/images/test/MOT16-03/MOT16-03/000045.jpg'
     img, img0 = load_img(img_path)
-    img = img.unsqueeze(0)
+    img = np.expand_dims(img, 0)
     tracker = JDETracker(opt)
     tracker.update(img, img0)
