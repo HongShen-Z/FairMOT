@@ -87,8 +87,8 @@ class JDETracker(object):
         print(img0.shape, img.shape)
         width = img0.shape[1]
         height = img0.shape[0]
-        inp_height = im_blob.shape[1]
-        inp_width = im_blob.shape[2]
+        inp_height = im_blob.shape[2]
+        inp_width = im_blob.shape[3]
         c = np.array([width / 2., height / 2.], dtype=np.float32)
         s = max(float(inp_width) / float(inp_height) * height, width) * 1.0
         meta = {'c': c, 's': s,
@@ -134,5 +134,6 @@ if __name__ == '__main__':
     opt = opts().init()
     img_path = '/seu_share/home/dijunyong/220205723/datasets/MOT/MOT16/images/test/MOT16-03/MOT16-03/000045.jpg'
     img, img0 = load_img(img_path)
+    img = img.unsqueeze(0)
     tracker = JDETracker(opt)
     tracker.update(img, img0)
