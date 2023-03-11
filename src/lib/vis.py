@@ -1,3 +1,5 @@
+import torch
+
 from models.decode import mot_decode
 from models.model import create_model, load_model
 from models.utils import _tranpose_and_gather_feat
@@ -84,7 +86,6 @@ class JDETracker(object):
         return results
 
     def update(self, im_blob, img0):
-        print(img0.shape, img.shape)
         width = img0.shape[1]
         height = img0.shape[0]
         inp_height = im_blob.shape[2]
@@ -97,6 +98,7 @@ class JDETracker(object):
 
         ''' Step 1: Network forward, get detections & embeddings'''
         with torch.no_grad():
+            im_blob = torch.from_numpy(im_blob)
             output = self.model(im_blob)
             hm = output['hm'].sigmoid_()
             wh = output['wh']
