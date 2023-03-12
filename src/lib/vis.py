@@ -103,6 +103,7 @@ class JDETracker(object):
             hm = output['hm'].sigmoid_()
             wh = output['wh']
             id_feature = output['id']
+            print(id_feature.shape)
             id_feature = F.normalize(id_feature, dim=1)
 
             id_map = torch.squeeze(id_feature)
@@ -122,9 +123,9 @@ class JDETracker(object):
         id_feature = id_feature[remain_inds]
 
         # vis
-        print(torch.max(hm), np.max(id_feature), np.max(np.sum(id_map, axis=1)))
+        print(id_map.shape)
+        print(torch.max(hm))
         print(len(dets))
-        print(id_feature.shape)
 
         # for i in range(0, dets.shape[0]):
         #     bbox = dets[i][0:4]
@@ -135,6 +136,11 @@ class JDETracker(object):
         det_map = torch.squeeze(hm)
         det_map = det_map.cpu().numpy()
 
+        id_map = np.transpose(id_map, (1, 2, 0)) # 转置维度
+        min_val = np.min(id_map)  # 最小值
+        max_val = np.max(id_map)  # 最大值
+        id_map = (id_map - min_val) / (max_val - min_val)  # 归一化
+
         # 将特征图数据归一化到0-255范围，并转换为整数类型
         det_map = (det_map * 255).astype(np.uint8)
         id_map = (id_map * 255).astype(np.uint8)
@@ -143,6 +149,7 @@ class JDETracker(object):
         idmap = cv2.applyColorMap(id_map, cv2.COLORMAP_JET)
         # 将热力图调整到和原始图片一样的大小
         detmap = cv2.resize(detmap, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
+        idmap = cv2.resize(idmap, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
         # 将热力图和原始图片按一定比例叠加，得到最终的图片
         img_detmap = cv2.addWeighted(img0, 0.5, detmap, 0.5, 0)
         img_idmap = cv2.addWeighted(img0, 0.5, idmap, 0.5, 0)
