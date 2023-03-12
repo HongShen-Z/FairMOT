@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J track
+#BSUB -J vis
 #BSUB -o %J.out
 #BSUB -e %J.err
 #BSUB -q gpu_v100
