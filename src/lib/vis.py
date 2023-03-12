@@ -151,8 +151,6 @@ if __name__ == '__main__':
     dataloader = datasets.LoadImages(img_path)
     for i, (path, img, img0) in enumerate(dataloader):
         print(img.shape, img0.shape)
-    # _, img, img0 = dataloader
-    # print(img.shape, img0.shape)
-    # blob = torch.from_numpy(img).unsqueeze(0)
-    # tracker = JDETracker(opt)
-    # tracker.update(blob, img0)
+        blob = torch.from_numpy(img).unsqueeze(0)
+        tracker = JDETracker(opt)
+        tracker.update(blob, img0)
