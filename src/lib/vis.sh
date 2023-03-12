@@ -10,4 +10,4 @@ source activate
 conda deactivate
 conda activate fair
 
-python lib/vis.py mot --load_model ../exp/abl_fo_arch-dev/models/model_last.pth ----conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES
+python lib/vis.py mot --load_model ../exp/abl_fo_arch-dev/models/model_last.pth --conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES
