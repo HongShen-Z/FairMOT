@@ -105,6 +105,9 @@ class JDETracker(object):
             id_feature = output['id']
             id_feature = F.normalize(id_feature, dim=1)
 
+            id_map = torch.squeeze(id_feature)
+            id_map = id_map.cpu().numpy()
+
             reg = output['reg'] if self.opt.reg_offset else None
             dets, inds = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K)
             id_feature = _tranpose_and_gather_feat(id_feature, inds)
@@ -119,7 +122,7 @@ class JDETracker(object):
         id_feature = id_feature[remain_inds]
 
         # vis
-        print(torch.max(hm), np.max(id_feature))
+        print(torch.max(hm), np.max(id_feature), np.max(np.sum(id_map, axis=1)))
         print(len(dets))
         print(id_feature.shape)
 
@@ -134,7 +137,7 @@ class JDETracker(object):
 
         # 将特征图数据归一化到0-255范围，并转换为整数类型
         det_map = (det_map * 255).astype(np.uint8)
-        id_map = (id_feature * 255).astype(np.uint8)
+        id_map = (id_map * 255).astype(np.uint8)
         # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
         detmap = cv2.applyColorMap(det_map, cv2.COLORMAP_JET)
         idmap = cv2.applyColorMap(id_map, cv2.COLORMAP_JET)
