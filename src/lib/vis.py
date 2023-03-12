@@ -149,7 +149,8 @@ if __name__ == '__main__':
     opt = opts().init()
     img_path = '../000400.jpg'
     dataloader = datasets.LoadImages(img_path)
-    print(dataloader)
+    for i, (path, img, img0) in enumerate(dataloader):
+        print(img.shape, img0.shape)
     # _, img, img0 = dataloader
     # print(img.shape, img0.shape)
     # blob = torch.from_numpy(img).unsqueeze(0)
