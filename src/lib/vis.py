@@ -149,8 +149,9 @@ if __name__ == '__main__':
     opt = opts().init()
     img_path = '../000400.jpg'
     dataloader = datasets.LoadImages(img_path)
-    _, img, img0 = dataloader
-    print(img.shape, img0.shape)
+    print(dataloader)
+    # _, img, img0 = dataloader
+    # print(img.shape, img0.shape)
     # blob = torch.from_numpy(img).unsqueeze(0)
     # tracker = JDETracker(opt)
     # tracker.update(blob, img0)
