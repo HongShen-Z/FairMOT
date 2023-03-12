@@ -103,11 +103,12 @@ class JDETracker(object):
             hm = output['hm'].sigmoid_()
             wh = output['wh']
             id_feature = output['id']
-            print(id_feature.shape)
-            id_feature = F.normalize(id_feature, dim=1)
 
+            print(id_feature.shape)
             id_map = torch.squeeze(id_feature)
             id_map = id_map.cpu().numpy()
+
+            id_feature = F.normalize(id_feature, dim=1)
 
             reg = output['reg'] if self.opt.reg_offset else None
             dets, inds = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K)
@@ -137,6 +138,7 @@ class JDETracker(object):
         det_map = det_map.cpu().numpy()
 
         id_map = np.transpose(id_map, (1, 2, 0)) # 转置维度
+        id_map = np.linalg.norm(id_map, axis=2)
         min_val = np.min(id_map)  # 最小值
         max_val = np.max(id_map)  # 最大值
         id_map = (id_map - min_val) / (max_val - min_val)  # 归一化
