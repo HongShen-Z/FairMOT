@@ -129,10 +129,9 @@ class JDETracker(object):
         # cv2.imwrite('../det.jpg', img0)
 
         feature_map = torch.squeeze(hm)
-        feature_map = np.asarray(feature_map)
 
         # 将特征图数据归一化到0-255范围，并转换为整数类型
-        feature_map = (feature_map * 255).astype(np.uint8)
+        feature_map = (feature_map * 255).to(torch.uint8)
         # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
         heatmap = cv2.applyColorMap(feature_map, cv2.COLORMAP_HOT)
         # 将热力图调整到和原始图片一样的大小
