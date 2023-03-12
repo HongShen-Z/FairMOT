@@ -51,7 +51,7 @@ class JDETracker(object):
         print('Creating model...')
         self.model = create_model(opt.arch, opt.heads, opt.head_conv)
         self.model = load_model(self.model, opt.load_model)
-        self.model = self.model.to(torch.device('cpu'))
+        self.model = self.model.to(opt.device)
         self.model.eval()
 
         self.frame_id = 0
@@ -151,6 +151,6 @@ if __name__ == '__main__':
     dataloader = datasets.LoadImages(img_path)
     for i, (path, img, img0) in enumerate(dataloader):
         print(img.shape, img0.shape)
-        blob = torch.from_numpy(img).unsqueeze(0)
+        blob = torch.from_numpy(img).cuda().unsqueeze(0)
         tracker = JDETracker(opt)
         tracker.update(blob, img0)
