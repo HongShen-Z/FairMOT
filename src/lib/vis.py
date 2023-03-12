@@ -7,6 +7,7 @@ from tracking_utils.utils import *
 from utils.post_process import ctdet_post_process
 import cv2
 from opts import opts
+import datasets.dataset.jde as datasets
 
 
 def letterbox(img, height=608, width=1088,
@@ -147,7 +148,9 @@ class JDETracker(object):
 if __name__ == '__main__':
     opt = opts().init()
     img_path = '../000400.jpg'
-    img, img0 = load_img(img_path)
-    blob = torch.from_numpy(img).unsqueeze(0)
-    tracker = JDETracker(opt)
-    tracker.update(blob, img0)
+    dataloader = datasets.LoadImages(img_path)
+    _, img, img0 = dataloader
+    print(img.shape, img0.shape)
+    # blob = torch.from_numpy(img).unsqueeze(0)
+    # tracker = JDETracker(opt)
+    # tracker.update(blob, img0)
