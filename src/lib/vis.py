@@ -147,6 +147,7 @@ class JDETracker(object):
         # 将热力图调整到和原始图片一样的大小
         detmap = cv2.resize(det_map, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
         idmap = cv2.resize(id_map, (img0.shape[1], img0.shape[0]), interpolation=cv2.INTER_CUBIC)
+        print(idmap.shape)
         # 使用cv2.applyColorMap函数将特征图转换为热力图，选择COLORMAP_JET作为颜色映射
         detmap = cv2.applyColorMap(detmap, cv2.COLORMAP_JET)
         idmap = cv2.applyColorMap(idmap, cv2.COLORMAP_JET)
