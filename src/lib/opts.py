@@ -115,7 +115,7 @@ class opts(object):
         self.parser.add_argument('--id_weight', type=float, default=1, help='loss weight for id')
         self.parser.add_argument('--reid_dim', type=int, default=128, help='feature dim for reid')
         self.parser.add_argument('--ltrb', default=True, help='regress left, top, right, bottom of bbox')
-        self.parser.add_argument('--multi_loss', default='gradnorm', help='multi_task loss: gradnorm|uncertainty|fix')
+        self.parser.add_argument('--multi_loss', default='fix', help='multi_task loss: grad_norm|uncertainty|fix')
         self.parser.add_argument('--norm_wh', action='store_true', help='L1(\hat(y) / y, 1) or L1(\hat(y), y)')
         self.parser.add_argument('--dense_wh', action='store_true',
                                  help='apply weighted regression near center or just apply regression on center point.')
