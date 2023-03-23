@@ -9,7 +9,6 @@ import re
 import shutil
 import glob
 
-
 # # 为txt路径文件每行前加'MOT/'
 # for ds in os.listdir('./src/data/'):
 #     if 'mot' in ds:
@@ -40,6 +39,30 @@ import glob
 #     new = osp.basename(file).split('SDP')[0]
 #     shutil.copy(file, osp.join(path, new + 'DPM.txt'))
 #     shutil.copy(file, osp.join(path, new + 'FRCNN.txt'))
+
+
+def average_time(path):
+    """ 统计平均训练时间"""
+    with open(path, "r") as f:
+        # 初始化一个空列表，用于存储time的数值
+        times = []
+        # 遍历文件的每一行
+        for line in f:
+            # 分割每一行的内容，以空格为分隔符
+            parts = line.split()
+            # 找到最后一个部分，即time后的数值
+            last_part = parts[-1]
+            # 去掉最后一个部分的竖线符号
+            last_part = last_part.strip("|")
+            # 将最后一个部分转换为浮点数，并添加到列表中
+            time_value = float(last_part)
+            times.append(time_value)
+        # 计算列表中所有数值的平均值
+        average = sum(times) / len(times)
+        # 打印平均值
+        print(path)
+        print("Average time:", average)
+
 
 def bbox_areas(bboxes, keep_axis=False):
     x_min, y_min, x_max, y_max = bboxes[0], bboxes[1], bboxes[2], bboxes[3]
