@@ -51,9 +51,7 @@ def average_time(path):
             # 分割每一行的内容，以空格为分隔符
             parts = line.split()
             # 找到最后一个部分，即time后的数值
-            last_part = parts[-1]
-            # 去掉最后一个部分的竖线符号
-            last_part = last_part.strip("|")
+            last_part = parts[-2]
             # 将最后一个部分转换为浮点数，并添加到列表中
             time_value = float(last_part)
             times.append(time_value)
