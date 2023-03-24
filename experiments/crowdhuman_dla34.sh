@@ -10,7 +10,7 @@ source activate
 conda deactivate
 conda activate fair
 cd src
-python train.py mot --exp_id ch_ITP --gpus $CUDA_VISIBLE_DEVICES --multi_loss 'uncertainty' --alpha 0.25 \
+python train.py mot --exp_id ch_MMD --gpus $CUDA_VISIBLE_DEVICES --multi_loss 'uncertainty' --alpha 0.25 \
 --batch_size 12 --load_model '../models/ctdet_coco_dla_2x.pth' --num_epochs 30 --hm_shape 'oval' \
 --lr_step '20' --lr 1e-4 --data_cfg '../src/lib/cfg/crowdhuman.json' --output-root '../demos/abl/net'
 #python train.py mot --exp_id ch_res34_whe2 --gpus $CUDA_VISIBLE_DEVICES --arch 'resdcn_34' --resume \
