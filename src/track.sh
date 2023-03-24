@@ -9,12 +9,12 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
-python track_half.py mot --val_mot17 True --load_model ../exp/oval/ch_0.85/models/model_last.pth \
---conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_ch_0.85 --output-root '../demos/abl/oval'
-python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_ch_0.85' --BENCHMARK 'MOT17' \
+python track_half.py mot --val_mot17 True --load_model ../exp/net/ch_ITP/models/model_last.pth \
+--conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_ch_ITP --output-root '../demos/abl/net'
+python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_ch_ITP' --BENCHMARK 'MOT17' \
 --METRICS 'HOTA' 'CLEAR' 'Identity' --SKIP_SPLIT_FOL True --USE_PARALLEL True --NUM_PARALLEL_CORES 2 \
 --GT_LOC_FORMAT '{gt_folder}/{seq}/gt/gt_val_half.txt' \
---TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos/abl/oval' \
+--TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos/abl/net' \
 --GT_FOLDER '/seu_share/home/dijunyong/220205723/datasets/MOT/data/gt/mot_challenge/'
 #python track.py mot --val_mot20 True --load_model ../exp/mot/ch_dla34_gd0.5/models/model_60.pth --conf_thres 0.3 \
 #--gpus $CUDA_VISIBLE_DEVICES --exp_id MOT20_ch_gd0.5
