@@ -672,12 +672,12 @@ class MTINet(nn.Module):
         #
         # out['deep_supervision'] = {'scale_0': x_0, 'scale_1': x_1, 'scale_2': x_2, 'scale_3': x_3}
 
-        # x_0 = self.scale_0(x)
-        # out['deep_supervision'] = {'scale_0': x_0}
+        x_0 = self.scale_0(x)
+        out['deep_supervision'] = {'scale_0': x_0}
 
-        x_0 = {}
-        for t in self.auxilary_tasks:
-            x_0['features_%s' % t] = x
+        # x_0 = {}
+        # for t in self.auxilary_tasks:
+        #     x_0['features_%s' % t] = x
 
         # x_0 = self.fpm_0(x_0)
 
