@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J arch
+#BSUB -J mix-net
 #BSUB -o %J.out
 #BSUB -e %J.err
 #BSUB -q gpu_v100
@@ -10,8 +10,8 @@ source activate
 conda deactivate
 conda activate fair
 cd src
-python train.py mot --exp_id fix_circle --num_epochs 30 --lr_step '20' --multi_loss 'fix' \
---gpus $CUDA_VISIBLE_DEVICES --load_model '../models/ctdet_coco_dla_2x.pth' --hm_shape 'circle' \
---data_cfg '../src/lib/cfg/data_half.json' --batch_size 12 --lr 1e-4
+python train.py mot --exp_id mix-ITP-MMD --num_epochs 30 --lr_step '20' --multi_loss 'uncertainty' \
+--gpus $CUDA_VISIBLE_DEVICES --load_model '../models/ctdet_coco_dla_2x.pth' --hm_shape 'oval' \
+--data_cfg '../src/lib/cfg/data_half.json' --batch_size 12 --lr 1e-4 --output-root '../demos/abl/net'
 cd ..
 # --lr 2e-4
