@@ -361,7 +361,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.label_files = OrderedDict()
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
-        self.num_classes = 1
+        self.num_classes = 3
 
         for ds, path in paths.items():
             with open(path, 'r') as file:
