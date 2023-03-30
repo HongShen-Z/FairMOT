@@ -164,7 +164,7 @@ class PoseYOLOv5s(nn.Module):
         ret = {}
         for head in self.heads:
             ret[head] = self.__getattr__(head)(x)
-        return [ret]
+        return ret
 
 
 def get_pose_net(num_layers, heads, head_conv):

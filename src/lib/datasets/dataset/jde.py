@@ -352,7 +352,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
     default_resolution = [1088, 608]
     mean = None
     std = None
-    num_classes = 1
 
     def __init__(self, opt, root, paths, img_size=(1088, 608), augment=False, transforms=None):
         self.opt = opt
@@ -361,7 +360,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.label_files = OrderedDict()
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
-        self.num_classes = 3
+        self.num_classes = opt.num_classes
 
         for ds, path in paths.items():
             with open(path, 'r') as file:
@@ -440,8 +439,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs,), dtype=np.uint8)
         ids = np.zeros((self.max_objs,), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
-        box_target = np.zeros((4, output_h, output_w), dtype=np.float32)
-        box_weight = np.zeros((1, output_h, output_w), dtype=np.float32)
+        box_target = np.zeros((4*num_classes, output_h, output_w), dtype=np.float32)
+        box_weight = np.zeros((num_classes, output_h, output_w), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss == 'mse' else draw_oval_gaussian \
             if self.opt.hm_shape == 'oval' else draw_umich_gaussian

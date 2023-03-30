@@ -61,6 +61,7 @@ class opts(object):
         self.parser.add_argument('--lr', type=float, default=1e-4, help='learning rate for batch size 12.')
         self.parser.add_argument('--lr_step', type=str, default='20', help='drop learning rate by 10.')
         self.parser.add_argument('--num_epochs', type=int, default=30, help='total training epochs.')
+        self.parser.add_argument('--num_classes', type=int, default=1, help='number of all classes')
         self.parser.add_argument('--batch_size', type=int, default=12, help='batch size')
         self.parser.add_argument('--master_batch_size', type=int, default=-1, help='batch size on the master gpu.')
         self.parser.add_argument('--num_iters', type=int, default=-1, help='default: #samples / batch_size.')
@@ -201,9 +202,8 @@ class opts(object):
 
     def init(self, args=''):
         default_dataset_info = {
-            'mot': {'default_resolution': [608, 1088], 'num_classes': 1,
-                    'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
-                    'dataset': 'jde', 'nID': 14455},
+            'mot': {'default_resolution': [608, 1088], 'mean': [0.408, 0.447, 0.470],
+                    'std': [0.289, 0.274, 0.278], 'dataset': 'jde', 'nID': 14455},
         }
 
         class Struct:
