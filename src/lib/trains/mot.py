@@ -39,7 +39,7 @@ class MotLoss(torch.nn.Module):
             bias_value = -math.log((1 - prior_prob) / prior_prob)
             torch.nn.init.constant_(self.classifier.bias, bias_value)
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
-        self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
+        self.emb_scale = 1  # math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
         self.s_id = nn.Parameter(-1.05 * torch.ones(1))
         self.share_w = share_w
