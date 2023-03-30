@@ -174,7 +174,7 @@ def get_pose_net(num_layers, heads, head_conv):
     )
     pretrained = os.path.join(
         os.path.dirname(__file__),
-        '../../../models/yolov5s.pt'
+        '../../../models/yolov5s-fair.pt'
     )
     model = PoseYOLOv5s(heads, config_file)
     initialize_weights(model, pretrained)
