@@ -120,7 +120,7 @@ class MotLoss(torch.nn.Module):
             loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
             loss *= 0.5
         else:
-            loss = det_loss + id_loss
+            loss = det_loss + opt.id_weight * id_loss
             # loss = det_loss + 0.1 * id_loss
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss, 'id_loss': id_loss}
