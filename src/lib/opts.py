@@ -173,7 +173,7 @@ class opts(object):
     def update_dataset_info_and_set_heads(self, opt, dataset):
         input_h, input_w = dataset.default_resolution
         opt.mean, opt.std = dataset.mean, dataset.std
-        opt.num_classes = dataset.num_classes
+        # opt.num_classes = dataset.num_classes
 
         # input_h(w): opt.input_h overrides opt.input_res overrides dataset default
         input_h = opt.input_res if opt.input_res > 0 else input_h
