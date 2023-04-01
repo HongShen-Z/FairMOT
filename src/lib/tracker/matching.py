@@ -73,14 +73,10 @@ def ious(atlbrs, btlbrs):
 
 def gious(bboxes1, bboxes2):
     # bboxes1 and bboxes2 are np.ndarray of shape (n, 4) and (m, 4) respectively
-    # the output is a torch tensor of shape (n, m) with the GIoU values
-    giou = torch.zeros((len(bboxes1), len(bboxes2)), dtype=torch.float)
+    # the output is a np.ndarray of shape (n, m) with the GIoU values
+    giou = np.zeros((len(bboxes1), len(bboxes2)), dtype=np.float)
     if len(bboxes1) * len(bboxes2) == 0:
         return giou
-
-    # convert the np.ndarray to torch tensors
-    bboxes1 = torch.from_numpy(bboxes1)
-    bboxes2 = torch.from_numpy(bboxes2)
 
     # expand the bboxes to broadcastable shapes
     bboxes1 = bboxes1[:, None, :]
@@ -97,22 +93,22 @@ def gious(bboxes1, bboxes2):
     area2 = w2 * h2
 
     # compute the coordinates of the intersection and the union
-    inter_max_xy = torch.min(bboxes1[..., 2:], bboxes2[..., 2:])
-    inter_min_xy = torch.max(bboxes1[..., :2], bboxes2[..., :2])
-    out_max_xy = torch.max(bboxes1[..., 2:], bboxes2[..., 2:])
-    out_min_xy = torch.min(bboxes1[..., :2], bboxes2[..., :2])
+    inter_max_xy = np.minimum(bboxes1[..., 2:], bboxes2[..., 2:])
+    inter_min_xy = np.maximum(bboxes1[..., :2], bboxes2[..., :2])
+    out_max_xy = np.maximum(bboxes1[..., 2:], bboxes2[..., 2:])
+    out_min_xy = np.minimum(bboxes1[..., :2], bboxes2[..., :2])
 
     # compute the areas of the intersection and the union
-    inter = torch.clamp((inter_max_xy - inter_min_xy), min=0)
+    inter = np.clip((inter_max_xy - inter_min_xy), a_min=0, a_max=None)
     inter_area = inter[..., 0] * inter[..., 1]
-    outer = torch.clamp((out_max_xy - out_min_xy), min=0)
+    outer = np.clip((out_max_xy - out_min_xy), a_min=0, a_max=None)
     outer_area = outer[..., 0] * outer[..., 1]
     union = area1 + area2 - inter_area
 
     # compute the IoU and the GIoU
     iou = inter_area / union
     gious = iou - (outer_area - union) / outer_area
-    gious = torch.clamp(gious, min=-1.0, max=1.0)
+    gious = np.clip(gious, a_min=-1.0, a_max=1.0)
 
     return gious
 
