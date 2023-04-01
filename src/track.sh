@@ -9,7 +9,7 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
-python track_half.py mot --val_mot17 True --load_model ../exp/net/mix-ITP-MMD/models/model_last.pth \
+python track_half.py mot --val_mot17 True --load_model ../exp/net/mix-ITP-MMD/models/model_25.pth \
 --conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_mix-ITP-MMD --output-root '../demos/abl/net'
 python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_mix-ITP-MMD' --BENCHMARK 'MOT17' \
 --METRICS 'HOTA' 'CLEAR' 'Identity' --SKIP_SPLIT_FOL True --USE_PARALLEL True --NUM_PARALLEL_CORES 2 \
