@@ -78,6 +78,10 @@ def gious(bboxes1, bboxes2):
     if len(bboxes1) * len(bboxes2) == 0:
         return giou
 
+    # convert the np.ndarray to np.ndarray
+    bboxes1 = np.copy(bboxes1)
+    bboxes2 = np.copy(bboxes2)
+
     # expand the bboxes to broadcastable shapes
     bboxes1 = bboxes1[:, None, :]
     bboxes2 = bboxes2[None, :, :]
