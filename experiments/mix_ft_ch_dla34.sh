@@ -12,5 +12,5 @@ conda activate fair
 cd src
 python train.py mot --exp_id mix_ft_ch_ITP-MMD --load_model '../exp/ch_fix_ITP-MMD/models/model_last.pth' \
 --data_cfg '../src/lib/cfg/data.json' --gpus $CUDA_VISIBLE_DEVICES --multi_loss 'fix' --alpha 0.25 \
---batch_size 16 --lr 1e-4 --hm_shape 'oval'
+--batch_size 24 --lr 2e-4 --hm_shape 'oval'
 cd ..
