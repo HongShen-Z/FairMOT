@@ -638,8 +638,8 @@ class MTINet(nn.Module):
         #     heads, self.auxilary_tasks, self.channels[3], self.channels[3])
 
         # self.fpm_0 = FPM(self.auxilary_tasks, self.channels[0])
-        self.scale_0 = InitialTaskPredictionModule(
-            heads, self.auxilary_tasks, self.channels[0], self.channels[0])
+        # self.scale_0 = InitialTaskPredictionModule(
+        #     heads, self.auxilary_tasks, self.channels[0], self.channels[0])
 
         # Distillation at multiple scales
         self.distillation_scale_0 = MultiTaskDistillationModule(self.tasks, self.auxilary_tasks, self.channels[0])
@@ -672,12 +672,12 @@ class MTINet(nn.Module):
         #
         # out['deep_supervision'] = {'scale_0': x_0, 'scale_1': x_1, 'scale_2': x_2, 'scale_3': x_3}
 
-        x_0 = self.scale_0(x)
-        out['deep_supervision'] = {'scale_0': x_0}
+        # x_0 = self.scale_0(x)
+        # out['deep_supervision'] = {'scale_0': x_0}
 
-        # x_0 = {}
-        # for t in self.auxilary_tasks:
-        #     x_0['features_%s' % t] = x
+        x_0 = {}
+        for t in self.auxilary_tasks:
+            x_0['features_%s' % t] = x
 
         # x_0 = self.fpm_0(x_0)
 
