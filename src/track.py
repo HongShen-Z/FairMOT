@@ -12,11 +12,11 @@ import motmetrics as mm
 import numpy as np
 import torch
 
-from lib.tracker.multitracker import JDETracker
+from tracker.multitracker import JDETracker
 from tracking_utils import visualization as vis
 from tracking_utils.log import logger
 from tracking_utils.timer import Timer
-from lib.tracking_utils.evaluation import Evaluator
+from tracking_utils.evaluation import Evaluator
 import datasets.dataset.jde as datasets
 
 from tracking_utils.utils import mkdir_if_missing
