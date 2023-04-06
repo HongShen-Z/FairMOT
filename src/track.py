@@ -172,7 +172,7 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
 
 if __name__ == '__main__':
     opt = opts().init()
-    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str   # '1'
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str  # '1'
     exp_name = opt.exp_id
 
     if not opt.val_mot16:
