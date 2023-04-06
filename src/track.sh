@@ -9,9 +9,9 @@ module load anaconda3
 source activate
 conda deactivate
 conda activate fair
-python track.py mot --test_mot17 True --load_model ../exp/mix_ft_ch_ITP-MMD/models/model_last.pth \
---conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT17_giou_ITP-MMD --output-root '../demos/benchmark'
-python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT17_giou_ITP-MMD' --BENCHMARK 'MOT17' \
+python track.py mot --test_mot16 True --load_model ../exp/mix_ft_ch_ITP-MMD/models/model_last.pth \
+--conf_thres 0.4 --gpus $CUDA_VISIBLE_DEVICES --exp_id MOT16_giou_ITP-MMD --output-root '../demos/benchmark'
+python TrackEval/scripts/run_mot_challenge.py --TRACKERS_TO_EVAL 'MOT16_giou_ITP-MMD' --BENCHMARK 'MOT16' \
 --METRICS 'HOTA' 'CLEAR' 'Identity' --SKIP_SPLIT_FOL True --USE_PARALLEL True --NUM_PARALLEL_CORES 2 \
 --GT_LOC_FORMAT '{gt_folder}/{seq}/gt/gt.txt' \
 --TRACKERS_FOLDER '/seu_share/home/dijunyong/220205723/projects/FairMOT/demos/benchmark/' \
