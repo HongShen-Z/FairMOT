@@ -1,5 +1,5 @@
 {
-    "root":"/home/zyf/dataset",
+    "root":"/seu_share/home/dijunyong/220205723/datasets",
     "train":
     {
         "mot20":"./data/mot20.train"
